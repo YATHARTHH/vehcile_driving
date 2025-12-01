@@ -1,0 +1,210 @@
+2025-07-31 02:41:57,666 [INFO] Loaded {len(df)} rows from database
+2025-07-31 02:42:01,726 [INFO] Logistic Regression: Mean F1-macro=0.708 ±0.043
+2025-07-31 02:42:04,250 [INFO] Decision Tree: Mean F1-macro=0.985 ±0.018
+2025-07-31 02:42:06,883 [INFO] k-Nearest Neighbors: Mean F1-macro=0.869 ±0.038
+2025-07-31 02:42:11,487 [INFO] SVM (RBF Kernel): Mean F1-macro=0.713 ±0.034
+2025-07-31 02:42:12,490 [INFO] Random Forest: Mean F1-macro=0.997 ±0.006
+2025-07-31 02:42:14,563 [INFO] Gradient Boosting: Mean F1-macro=0.996 ±0.006
+2025-07-31 02:42:22,034 [INFO] MLP (Neural Network): Mean F1-macro=0.837 ±0.043
+2025-07-31 02:42:22,035 [INFO] Selected best model: Random Forest
+2025-07-31 02:42:22,690 [INFO] Test Accuracy: 1.000
+2025-07-31 02:42:22,694 [INFO] Classification Report:
+              precision    recall  f1-score   support
+
+     Average       1.00      1.00      1.00       184
+        Good       1.00      1.00      1.00       201
+       Risky       1.00      1.00      1.00        29
+
+    accuracy                           1.00       414
+   macro avg       1.00      1.00      1.00       414
+weighted avg       1.00      1.00      1.00       414
+
+2025-07-31 02:42:26,232 [INFO] Benchmark complete. Artifacts & plots saved.
+2025-07-31 02:48:18,117 [INFO] Logistic Regression: Mean F1-macro = 0.708 ± 0.043
+2025-07-31 02:48:20,873 [INFO] Decision Tree: Mean F1-macro = 0.985 ± 0.018
+2025-07-31 02:48:23,503 [INFO] k-Nearest Neighbors: Mean F1-macro = 0.869 ± 0.038
+2025-07-31 02:48:26,101 [INFO] SVM (RBF Kernel): Mean F1-macro = 0.713 ± 0.034
+2025-07-31 02:48:26,636 [INFO] Random Forest: Mean F1-macro = 0.997 ± 0.006
+2025-07-31 02:48:27,665 [INFO] Gradient Boosting: Mean F1-macro = 0.996 ± 0.006
+2025-07-31 02:48:31,300 [INFO] MLP (Neural Network): Mean F1-macro = 0.837 ± 0.043
+2025-07-31 03:17:33,661 [INFO] Loaded 1379 rows from database
+2025-07-31 03:17:37,371 [INFO] Logistic Regression: Mean F1-macro=0.708 ±0.043
+2025-07-31 03:17:40,030 [INFO] Decision Tree: Mean F1-macro=0.985 ±0.018
+2025-07-31 03:17:42,502 [INFO] k-Nearest Neighbors: Mean F1-macro=0.869 ±0.038
+2025-07-31 03:17:45,033 [INFO] SVM (RBF Kernel): Mean F1-macro=0.713 ±0.034
+2025-07-31 03:17:45,535 [INFO] Random Forest: Mean F1-macro=0.997 ±0.006
+2025-07-31 03:17:46,553 [INFO] Gradient Boosting: Mean F1-macro=0.996 ±0.006
+2025-07-31 03:17:50,344 [INFO] MLP (Neural Network): Mean F1-macro=0.837 ±0.043
+2025-07-31 03:17:50,345 [INFO] Selected best model: Random Forest
+2025-07-31 03:17:50,638 [INFO] Test Accuracy: 1.000
+2025-07-31 03:17:50,639 [INFO] Classification Report:
+              precision    recall  f1-score   support
+
+     Average       1.00      1.00      1.00       184
+        Good       1.00      1.00      1.00       201
+       Risky       1.00      1.00      1.00        29
+
+    accuracy                           1.00       414
+   macro avg       1.00      1.00      1.00       414
+weighted avg       1.00      1.00      1.00       414
+
+2025-07-31 03:18:07,539 [INFO] Benchmark complete. Artifacts & plots saved.
+2025-07-31 03:20:08,388 [INFO] Loaded 1379 rows from database
+2025-07-31 03:20:12,444 [INFO] Logistic Regression: CV F1=0.708, Test F1=0.650
+2025-07-31 03:20:15,046 [INFO] Decision Tree: CV F1=0.985, Test F1=0.977
+2025-07-31 03:20:17,788 [INFO] k-Nearest Neighbors: CV F1=0.869, Test F1=0.885
+2025-07-31 03:20:20,726 [INFO] SVM (RBF Kernel): CV F1=0.713, Test F1=0.678
+2025-07-31 03:20:21,608 [INFO] Random Forest: CV F1=0.997, Test F1=1.000
+2025-07-31 03:20:23,662 [INFO] Gradient Boosting: CV F1=0.996, Test F1=1.000
+2025-07-31 03:20:33,933 [INFO] MLP Neural Network: CV F1=0.837, Test F1=0.856
+2025-07-31 03:20:33,934 [INFO] Selected best model: Random Forest
+2025-07-31 03:20:34,204 [INFO] Test Accuracy: 1.000
+2025-07-31 03:20:34,205 [INFO] Classification Report:
+              precision    recall  f1-score   support
+
+     Average       1.00      1.00      1.00       184
+        Good       1.00      1.00      1.00       201
+       Risky       1.00      1.00      1.00        29
+
+    accuracy                           1.00       414
+   macro avg       1.00      1.00      1.00       414
+weighted avg       1.00      1.00      1.00       414
+
+2025-07-31 03:20:42,140 [INFO] Saved model_comparison_table.csv
+2025-07-31 03:20:42,141 [INFO] Benchmark complete. Artifacts & plots saved.
+2025-07-31 03:29:50,346 [INFO] Loaded 1379 rows from database
+2025-07-31 03:29:53,950 [INFO] Logistic Regression: Mean F1-macro=0.708 ±0.043
+2025-07-31 03:29:56,418 [INFO] Decision Tree: Mean F1-macro=0.985 ±0.018
+2025-07-31 03:29:58,919 [INFO] k-Nearest Neighbors: Mean F1-macro=0.869 ±0.038
+2025-07-31 03:30:01,433 [INFO] SVM (RBF Kernel): Mean F1-macro=0.713 ±0.034
+2025-07-31 03:30:01,948 [INFO] Random Forest: Mean F1-macro=0.997 ±0.006
+2025-07-31 03:30:03,003 [INFO] Gradient Boosting: Mean F1-macro=0.996 ±0.006
+2025-07-31 03:30:06,689 [INFO] MLP (Neural Network): Mean F1-macro=0.837 ±0.043
+2025-07-31 03:30:06,735 [INFO] Logistic Regression - Accuracy: 0.8237, Precision: 0.6957, Recall: 0.6384, F1: 0.6498
+2025-07-31 03:30:06,747 [INFO] Decision Tree - Accuracy: 0.9903, Precision: 0.9929, Recall: 0.9639, F1: 0.9774
+2025-07-31 03:30:06,775 [INFO] k-Nearest Neighbors - Accuracy: 0.9589, Precision: 0.9005, Recall: 0.8724, F1: 0.8851
+2025-07-31 03:30:06,893 [INFO] SVM (RBF Kernel) - Accuracy: 0.8502, Precision: 0.8440, Recall: 0.6574, F1: 0.6778
+2025-07-31 03:30:07,168 [INFO] Random Forest - Accuracy: 1.0000, Precision: 1.0000, Recall: 1.0000, F1: 1.0000
+2025-07-31 03:30:07,978 [INFO] Gradient Boosting - Accuracy: 1.0000, Precision: 1.0000, Recall: 1.0000, F1: 1.0000
+2025-07-31 03:30:11,539 [INFO] MLP (Neural Network) - Accuracy: 0.9179, Precision: 0.9103, Recall: 0.8231, F1: 0.8559
+2025-07-31 03:30:11,558 [INFO] Model Performance Comparison:
+2025-07-31 03:30:11,561 [INFO]                      Accuracy Precision  Recall F1Score
+Random Forest          100.0%    100.0%  100.0%  100.0%
+Gradient Boosting      100.0%    100.0%  100.0%  100.0%
+Decision Tree          99.03%    99.29%  96.39%  97.74%
+k-Nearest Neighbors    95.89%    90.05%  87.24%  88.51%
+MLP (Neural Network)   91.79%    91.03%  82.31%  85.59%
+SVM (RBF Kernel)       85.02%     84.4%  65.74%  67.78%
+Logistic Regression    82.37%    69.57%  63.84%  64.98%
+2025-07-31 03:30:13,007 [INFO] Selected best model: Random Forest
+2025-07-31 03:30:13,311 [INFO] Test Accuracy: 1.000
+2025-07-31 03:30:13,311 [INFO] Classification Report:
+              precision    recall  f1-score   support
+
+     Average       1.00      1.00      1.00       184
+        Good       1.00      1.00      1.00       201
+       Risky       1.00      1.00      1.00        29
+
+    accuracy                           1.00       414
+   macro avg       1.00      1.00      1.00       414
+weighted avg       1.00      1.00      1.00       414
+
+2025-07-31 03:30:13,827 [INFO] Confusion Matrix:
+2025-07-31 03:30:13,829 [INFO]          Average  Good  Risky
+Average      184     0      0
+Good           0   201      0
+Risky          0     0     29
+2025-07-31 03:30:13,830 [INFO] Benchmark complete. Artifacts & plots saved.
+2025-07-31 03:35:43,573 [INFO] Loaded 1379 rows from database
+2025-07-31 03:35:47,393 [INFO] Logistic Regression: Mean F1-macro=0.708 ±0.043
+2025-07-31 03:35:50,197 [INFO] Decision Tree: Mean F1-macro=0.985 ±0.018
+2025-07-31 03:35:52,808 [INFO] k-Nearest Neighbors: Mean F1-macro=0.869 ±0.038
+2025-07-31 03:35:55,282 [INFO] SVM (RBF Kernel): Mean F1-macro=0.713 ±0.034
+2025-07-31 03:35:55,802 [INFO] Random Forest: Mean F1-macro=0.997 ±0.006
+2025-07-31 03:35:56,874 [INFO] Gradient Boosting: Mean F1-macro=0.996 ±0.006
+2025-07-31 03:36:00,585 [INFO] MLP (Neural Network): Mean F1-macro=0.837 ±0.043
+2025-07-31 03:36:00,613 [INFO] Logistic Regression - Accuracy: 0.8237, Precision: 0.6957, Recall: 0.6384, F1: 0.6498
+2025-07-31 03:36:00,623 [INFO] Decision Tree - Accuracy: 0.9903, Precision: 0.9929, Recall: 0.9639, F1: 0.9774
+2025-07-31 03:36:00,649 [INFO] k-Nearest Neighbors - Accuracy: 0.9589, Precision: 0.9005, Recall: 0.8724, F1: 0.8851
+2025-07-31 03:36:00,771 [INFO] SVM (RBF Kernel) - Accuracy: 0.8502, Precision: 0.8440, Recall: 0.6574, F1: 0.6778
+2025-07-31 03:36:01,052 [INFO] Random Forest - Accuracy: 1.0000, Precision: 1.0000, Recall: 1.0000, F1: 1.0000
+2025-07-31 03:36:01,907 [INFO] Gradient Boosting - Accuracy: 1.0000, Precision: 1.0000, Recall: 1.0000, F1: 1.0000
+2025-07-31 03:36:05,501 [INFO] MLP (Neural Network) - Accuracy: 0.9179, Precision: 0.9103, Recall: 0.8231, F1: 0.8559
+2025-07-31 03:36:05,522 [INFO] Model Performance Comparison:
+2025-07-31 03:36:05,526 [INFO]                      Accuracy Precision  Recall F1Score
+Random Forest          100.0%    100.0%  100.0%  100.0%
+Gradient Boosting      100.0%    100.0%  100.0%  100.0%
+Decision Tree          99.03%    99.29%  96.39%  97.74%
+k-Nearest Neighbors    95.89%    90.05%  87.24%  88.51%
+MLP (Neural Network)   91.79%    91.03%  82.31%  85.59%
+SVM (RBF Kernel)       85.02%     84.4%  65.74%  67.78%
+Logistic Regression    82.37%    69.57%  63.84%  64.98%
+2025-07-31 03:36:06,781 [INFO] Selected best model: Random Forest
+2025-07-31 03:36:07,050 [INFO] Test Accuracy: 1.000
+2025-07-31 03:36:07,051 [INFO] Classification Report:
+              precision    recall  f1-score   support
+
+     Average       1.00      1.00      1.00       184
+        Good       1.00      1.00      1.00       201
+       Risky       1.00      1.00      1.00        29
+
+    accuracy                           1.00       414
+   macro avg       1.00      1.00      1.00       414
+weighted avg       1.00      1.00      1.00       414
+
+2025-07-31 03:36:07,454 [INFO] Confusion Matrix:
+2025-07-31 03:36:07,456 [INFO]          Average  Good  Risky
+Average      184     0      0
+Good           0   201      0
+Risky          0     0     29
+2025-07-31 03:36:07,945 [INFO] Feature Importance - Random Forest:
+2025-07-31 03:36:07,946 [INFO] avg_speed_kmph: 0.2713
+2025-07-31 03:36:07,947 [INFO] max_speed: 0.2198
+2025-07-31 03:36:07,947 [INFO] distance_km: 0.1900
+2025-07-31 03:36:07,948 [INFO] trip_duration: 0.1673
+2025-07-31 03:36:07,949 [INFO] throttle_position: 0.1045
+2025-07-31 03:36:07,950 [INFO] engine_load: 0.0470
+2025-07-31 03:36:08,016 [INFO] Benchmark complete. Artifacts & plots saved.
+2025-07-31 03:39:11,243 [INFO] Loaded 1379 rows from database
+2025-07-31 03:39:15,844 [INFO] Logistic Regression: Mean F1-macro=0.708 ±0.043
+2025-07-31 03:39:18,853 [INFO] Decision Tree: Mean F1-macro=0.985 ±0.018
+2025-07-31 03:39:21,742 [INFO] k-Nearest Neighbors: Mean F1-macro=0.869 ±0.038
+2025-07-31 03:39:26,195 [INFO] SVM (RBF Kernel): Mean F1-macro=0.713 ±0.034
+2025-07-31 03:39:27,127 [INFO] Random Forest: Mean F1-macro=0.997 ±0.006
+2025-07-31 03:39:29,226 [INFO] Gradient Boosting: Mean F1-macro=0.996 ±0.006
+2025-07-31 03:39:36,815 [INFO] MLP (Neural Network): Mean F1-macro=0.837 ±0.043
+2025-07-31 03:39:36,882 [INFO] Logistic Regression - Accuracy: 0.8237, Precision: 0.6957, Recall: 0.6384, F1: 0.6498
+2025-07-31 03:39:36,901 [INFO] Decision Tree - Accuracy: 0.9903, Precision: 0.9929, Recall: 0.9639, F1: 0.9774
+2025-07-31 03:39:36,959 [INFO] k-Nearest Neighbors - Accuracy: 0.9589, Precision: 0.9005, Recall: 0.8724, F1: 0.8851
+2025-07-31 03:39:37,177 [INFO] SVM (RBF Kernel) - Accuracy: 0.8502, Precision: 0.8440, Recall: 0.6574, F1: 0.6778
+2025-07-31 03:39:37,556 [INFO] Random Forest - Accuracy: 1.0000, Precision: 1.0000, Recall: 1.0000, F1: 1.0000
+2025-07-31 03:39:38,423 [INFO] Gradient Boosting - Accuracy: 1.0000, Precision: 1.0000, Recall: 1.0000, F1: 1.0000
+2025-07-31 03:39:41,812 [INFO] MLP (Neural Network) - Accuracy: 0.9179, Precision: 0.9103, Recall: 0.8231, F1: 0.8559
+2025-07-31 03:39:41,830 [INFO] Model Performance Comparison:
+2025-07-31 03:39:41,833 [INFO]                      Accuracy Precision  Recall F1Score
+Random Forest          100.0%    100.0%  100.0%  100.0%
+Gradient Boosting      100.0%    100.0%  100.0%  100.0%
+Decision Tree          99.03%    99.29%  96.39%  97.74%
+k-Nearest Neighbors    95.89%    90.05%  87.24%  88.51%
+MLP (Neural Network)   91.79%    91.03%  82.31%  85.59%
+SVM (RBF Kernel)       85.02%     84.4%  65.74%  67.78%
+Logistic Regression    82.37%    69.57%  63.84%  64.98%
+2025-07-31 03:39:51,810 [INFO] Selected best model: Random Forest
+2025-07-31 03:39:52,182 [INFO] Test Accuracy: 1.000
+2025-07-31 03:39:52,183 [INFO] Classification Report:
+              precision    recall  f1-score   support
+
+     Average       1.00      1.00      1.00       184
+        Good       1.00      1.00      1.00       201
+       Risky       1.00      1.00      1.00        29
+
+    accuracy                           1.00       414
+   macro avg       1.00      1.00      1.00       414
+weighted avg       1.00      1.00      1.00       414
+
+2025-07-31 03:39:55,888 [INFO] Confusion Matrix:
+2025-07-31 03:39:55,890 [INFO]          Average  Good  Risky
+Average      184     0      0
+Good           0   201      0
+Risky          0     0     29
+2025-07-31 03:39:55,894 [INFO] Benchmark complete. Artifacts & plots saved.

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='register.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="register-container">
+    <div class="register-box">
+      <h2>Register</h2>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flashes">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+      <form method="post">
+        <div class="input-group">
+          <input name="username" type="text" placeholder="Username" required pattern="^[a-zA-Z0-9_]{3,20}$" title="Username must be 3-20 characters and alphanumeric." />
+        </div>
+        <div class="input-group">
+          <input name="password" type="password" placeholder="Password" required minlength="6" title="Password must be at least 6 characters long." />
+        </div>
+        <div class="input-group">
+          <input name="email" type="email" placeholder="Email" required pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" title="Please enter a valid email address." />
+        </div>
+        <div class="input-group">
+          <input name="vehicle_number" type="text" placeholder="Vehicle Number" required pattern="^[A-Z0-9-]{6,12}$" title="Vehicle number must be 6-12 characters, including capital letters, numbers, and hyphens." />
+        </div>
+        <button type="submit" class="submit-btn">Register</button>
+      </form>
+      <p class="login-link">Already have an account? <a href="/login">Login</a></p>
+    </div>
+  </div>
+</body>
+</html>

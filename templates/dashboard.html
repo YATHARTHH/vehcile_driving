@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Vehicle Trip Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .close {
+            color: #6b7280;
+            font-size: 28px;
+            font-weight: 300;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #1f2937;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .filter-group {
+            margin-bottom: 20px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .modal-btn-secondary {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .modal-btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+
+        .modal-btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .export-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-option:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .export-option input[type="radio"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .export-option-content {
+            flex: 1;
+        }
+
+        .export-option-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .export-option-desc {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .filter-active {
+            background-color: #3b82f6 !important;
+            color: white !important;
+        }
+
+        .filter-badge {
+            display: inline-block;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 11px;
+            text-align: center;
+            line-height: 18px;
+            margin-left: 6px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="dashboard-header">
+        <div class="dashboard-container">
+            <nav class="top-nav">
+                <div class="logo">
+                    <i class="fas fa-car-side"></i>
+                    <span>FleetTrack</span>
+                </div>
+                <div class="nav-links">
+                    <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="dashboard-welcome">
+            <h1>Vehicle Trip Analytics Dashboard</h1>
+            <p class="dashboard-subtitle">Track and analyze your vehicle performance metrics</p>
+        </div>
+
+        {% if trips %}
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-road"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Distance</h3>
+                    <p class="stat-value" id="totalDistance">{{ trips|sum(attribute='distance_km')|round(1) }} km</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Avg Speed</h3>
+                    <p class="stat-value" id="avgSpeed">{{ (trips|sum(attribute='avg_speed_kmph') / trips|length)|round(1) }} km/h</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fas fa-gas-pump"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Fuel</h3>
+                    <p class="stat-value" id="totalFuel">{{ trips|sum(attribute='fuel_consumed')|round(1) }} L</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Total Trips</h3>
+                    <p class="stat-value" id="totalTrips">{{ trips|length }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="section-header">
+                <h2>Recent Trip Summary</h2>
+                <div class="section-actions">
+                    <button class="action-btn" id="exportBtn"><i class="fas fa-download"></i> Export</button>
+                    <button class="action-btn" id="filterBtn"><i class="fas fa-filter"></i> Filter</button>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table id="tripsTable">
+                    <thead>
+                        <tr>
+                            <th>Trip Date</th>
+                            <th>Distance (km)</th>
+                            <th>Avg Speed (km/h)</th>
+                            <th>Max Speed (km/h)</th>
+                            <th>Max RPM</th>
+                            <th>Fuel Consumed (L)</th>
+                            <th>Brake Events</th>
+                            <th>Steering Angle</th>
+                            <th>Angular Velocity</th>
+                            <th>Acceleration</th>
+                            <th>Gear</th>
+                            <th>Tire Pressure</th>
+                            <th>Engine Load</th>
+                            <th>Throttle Position</th>
+                            <th>Brake Pressure</th>
+                            <th>Trip Duration</th>
+                            <th>Start Location</th>
+                            <th>End Location</th>
+                            <th>View Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tripsTableBody">
+                        {% for trip in trips %}
+                        <tr data-trip='{{ trip | tojson }}'>
+                            <td>{{ trip['trip_date'] }}</td>
+                            <td>{{ trip['distance_km'] }}</td>
+                            <td>{{ trip['avg_speed_kmph'] }}</td>
+                            <td>{{ trip['max_speed'] }}</td>
+                            <td>{{ trip['max_rpm'] }}</td>
+                            <td>{{ trip['fuel_consumed'] }}</td>
+                            <td>{{ trip['brake_events'] }}</td>
+                            <td>{{ trip['steering_angle'] }}</td>
+                            <td>{{ trip['angular_velocity'] }}</td>
+                            <td>{{ trip['acceleration'] }}</td>
+                            <td>{{ trip['gear_position'] }}</td>
+                            <td>{{ trip['tire_pressure'] }}</td>
+                            <td>{{ trip['engine_load'] }}</td>
+                            <td>{{ trip['throttle_position'] }}</td>
+                            <td>{{ trip['brake_pressure'] }}</td>
+                            <td>{{ trip['trip_duration'] }}</td>
+                            <td>{{ trip['start_location'] }}</td>
+                            <td>{{ trip['end_location'] }}</td>
+                            <td><a href="{{ url_for('trip_detail', trip_id=trip['id']) }}">View</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Export Modal -->
+        <div id="exportModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-download"></i> Export Trip Data</h2>
+                    <span class="close" id="closeExport">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="export-option">
+                        <input type="radio" id="exportCSV" name="exportFormat" value="csv" checked>
+                        <div class="export-option-content">
+                            <div class="export-option-title">CSV Format</div>
+                            <div class="export-option-desc">Comma-separated values, compatible with Excel</div>
+                        </div>
+                    </div>
+                    <div class="export-option">
+                        <input type="radio" id="exportJSON" name="exportFormat" value="json">
+                        <div class="export-option-content">
+                            <div class="export-option-title">JSON Format</div>
+                            <div class="export-option-desc">JavaScript Object Notation for developers</div>
+                        </div>
+                    </div>
+                    <div class="export-option">
+                        <input type="radio" id="exportExcel" name="exportFormat" value="excel">
+                        <div class="export-option-content">
+                            <div class="export-option-title">Excel Format</div>
+                            <div class="export-option-desc">Native Excel file with formatting</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn modal-btn-secondary" id="cancelExport">Cancel</button>
+                    <button class="modal-btn modal-btn-primary" id="confirmExport"><i class="fas fa-download"></i> Download</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Modal -->
+        <div id="filterModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-filter"></i> Filter Trips</h2>
+                    <span class="close" id="closeFilter">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="filter-group">
+                        <label for="filterDateFrom">Date From</label>
+                        <input type="date" id="filterDateFrom">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterDateTo">Date To</label>
+                        <input type="date" id="filterDateTo">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterMinDistance">Minimum Distance (km)</label>
+                        <input type="number" id="filterMinDistance" placeholder="0" min="0" step="0.1">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterMaxDistance">Maximum Distance (km)</label>
+                        <input type="number" id="filterMaxDistance" placeholder="Any" min="0" step="0.1">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterMinSpeed">Minimum Avg Speed (km/h)</label>
+                        <input type="number" id="filterMinSpeed" placeholder="0" min="0" step="0.1">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterMaxSpeed">Maximum Avg Speed (km/h)</label>
+                        <input type="number" id="filterMaxSpeed" placeholder="Any" min="0" step="0.1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn modal-btn-secondary" id="resetFilter">Reset</button>
+                    <button class="modal-btn modal-btn-primary" id="applyFilter"><i class="fas fa-check"></i> Apply Filter</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="section-header">
+                <h3>Trip Performance Analytics</h3>
+                <div class="section-actions">
+                    <select class="time-filter">
+                        <option value="all">All Time</option>
+                        <option value="month">Last Month</option>
+                        <option value="week">Last Week</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Distance Covered (km)</div>
+                        <div class="chart-options">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    <canvas id="distanceChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Average Speed (km/h)</div>
+                        <div class="chart-options">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    <canvas id="avgSpeedChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Maximum Speed (km/h)</div>
+                        <div class="chart-options">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    <canvas id="maxSpeedChart"></canvas>
+                </div>
+
+                <div class="chart-container pie-chart">
+                    <div class="chart-header">
+                        <div class="chart-title">Fuel Consumption Analysis</div>
+                        <div class="chart-options">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    <canvas id="fuelChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Max RPM per Trip</div>
+                        <div class="chart-options">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    <canvas id="rpmChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Steering Angle Trend</div>
+                        <div class="chart-options">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                    <canvas id="steeringChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Brake Events</div>
+                        <div class="chart-options"><i class="fas fa-ellipsis-v"></i></div>
+                    </div>
+                    <canvas id="brakeEventsChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Angular Velocity</div>
+                        <div class="chart-options"><i class="fas fa-ellipsis-v"></i></div>
+                    </div>
+                    <canvas id="angularVelocityChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Acceleration</div>
+                        <div class="chart-options"><i class="fas fa-ellipsis-v"></i></div>
+                    </div>
+                    <canvas id="accelerationChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Gear Position</div>
+                        <div class="chart-options"><i class="fas fa-ellipsis-v"></i></div>
+                    </div>
+                    <canvas id="gearChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Tire Pressure</div>
+                        <div class="chart-options"><i class="fas fa-ellipsis-v"></i></div>
+                    </div>
+                    <canvas id="tirePressureChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Engine Load</div>
+                        <div class="chart-options"><i class="fas fa-ellipsis-v"></i></div>
+                    </div>
+                    <canvas id="engineLoadChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Throttle Position</div>
+                        <div class="chart-options"><i class="fas fa-ellipsis-v"></i></div>
+                    </div>
+                    <canvas id="throttleChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Brake Pressure</div>
+                        <div class="chart-options"><i class="fas fa-ellipsis-v"></i></div>
+                    </div>
+                    <canvas id="brakePressureChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Trip Duration</div>
+                        <div class="chart-options"><i class="fas fa-ellipsis-v"></i></div>
+                    </div>
+                    <canvas id="tripDurationChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">Fuel Efficiency</div>
+                        <div class="chart-options"><i class="fas fa-ellipsis-v"></i></div>
+                    </div>
+                    <canvas id="fuelEfficiencyChart"></canvas>
+                </div>
+
+            </div>
+
+        </div>
+
+        <footer class="dashboard-footer">
+            <p>&copy; 2025 FleetTrack Analytics. All rights reserved.</p>
+        </footer>
+
+        <script>
+            const tripsData = JSON.parse('{{ trips | tojson | safe }}');
+            let allTrips = [...tripsData];
+            let filteredTrips = [...tripsData];
+        </script>
+        <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+        <script src="{{ url_for('static', filename='export-filter.js') }}"></script>
+        {% else %}
+        <div class="no-data-container">
+            <div class="no-data">
+                <i class="fas fa-database"></i>
+                <h2>No Trip Data Available</h2>
+                <p>There are currently no trips to display. Add trip data to see analytics.</p>
+                <button class="primary-btn"><i class="fas fa-plus"></i> Add New Trip</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+
+</html>

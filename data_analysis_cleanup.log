@@ -1,0 +1,2 @@
+2025-07-29 11:57:33,590 - [32mINFO[0m - 💾 Database backed up to: ecodriving_backup_20250729_115733.db
+2025-07-29 11:57:33,592 - [31mERROR[0m - ❌ Fatal error: Execution failed on sql 'SELECT * FROM trips ORDER BY trip_date DESC, user_id': no such table: trips

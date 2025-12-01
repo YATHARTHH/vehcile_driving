@@ -1,0 +1,35 @@
+{
+  "best_model_name": "Optimized Random Forest",
+  "features": [
+    "avg_speed_kmph",
+    "max_speed",
+    "throttle_position",
+    "engine_load",
+    "trip_duration",
+    "distance_km"
+  ],
+  "accuracy": 0.9299363057324841,
+  "baseline_accuracy": 0.9490445859872612,
+  "dummy_f1": 0.26098191214470284,
+  "baseline_f1": 0.9406535010297147,
+  "optimized_f1": 0.9105557338468121,
+  "f1_score_cv": 0.9625014333168332,
+  "post_fit_cv_f1": 0.9587802202366259,
+  "needs_scaling": true,
+  "target_classes": [
+    "Average",
+    "Good",
+    "Risky"
+  ],
+  "training_data_size": 521,
+  "test_split_size": 157,
+  "best_params": {
+    "bootstrap": true,
+    "max_depth": 10,
+    "max_features": "sqrt",
+    "min_samples_leaf": 1,
+    "min_samples_split": 2,
+    "n_estimators": 100
+  },
+  "timestamp": "20250731_154615"
+}

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip Details - Fleet Management</title>
+
+    <!-- External Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='trip_detail.css') }}">
+    
+   
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-car-side logo-icon"></i>
+                    <span>FleetTrack</span>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="#" class="active"><i class="fas fa-route"></i> Trips</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container main-content">
+        <div class="header-section">
+            <h2>Trip Details</h2>
+            <div class="trip-meta">
+                <span><i class="fas fa-map-marker-alt"></i> From: {{ trip['start_location'] }}</span>
+                <span><i class="fas fa-map-marker"></i> To: {{ trip['end_location'] }}</span>
+                <span><i class="fas fa-calendar"></i> Date: {{ trip['trip_date'] }}</span>
+            </div>
+        </div>
+
+        {% if trip %}
+
+        <!-- Key Metrics Section -->
+        <div class="key-metrics">
+            <div class="metric-card score-card">
+                <div class="metric-icon"><i class="fas fa-award"></i></div>
+                <div class="metric-content">
+                    <h3>Driving Score</h3>
+                    <div class="score-display">{{ logic_score }}</div>
+                    <div class="score-rating {{ logic_behavior|lower }}">{{ logic_behavior }}</div>
+                </div>
+            </div>
+            
+            <!-- Enhanced AI Analysis card with ML integration -->
+            <div class="metric-card behavior-card">
+                <div class="metric-icon"><i class="fas fa-brain"></i></div>
+                <div class="metric-content">
+                    <h3>AI Analysis</h3>
+
+                    {% if ml_error %}
+                        <div class="ml-error">
+                            <div class="error-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                            <div class="error-text">ML Unavailable</div>
+                            <small class="error-detail">{{ ml_error }}</small>
+                        </div>
+                    {% else %}
+                        <div class="behavior-display {{ ml_behavior|lower }}">{{ ml_behavior }}</div>
+                        <div class="ml-details">
+                            <small class="model-info">Model: {{ ml_model_used }}</small>
+                            {% if ml_confidence > 0 %}
+                                <small class="confidence-info">Confidence: {{ "%.1f"|format(ml_confidence) }}%</small>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="metric-card efficiency-card">
+                <div class="metric-icon"><i class="fas fa-leaf"></i></div>
+                <div class="metric-content">
+                    <h3>Fuel Efficiency</h3>
+                    <div class="efficiency-display">{{ (trip['distance_km'] / trip['fuel_consumed'])|round(2) }}</div>
+                    <div class="efficiency-unit">km/L</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logic vs ML Comparison Panel
+        <div class="prediction-comparison">
+            <h3><i class="fas fa-balance-scale"></i> Prediction Comparison</h3>
+
+            <div class="comparison-cards">
+                Logic-based card
+                <div class="comparison-card logic-card">
+                    <h4><i class="fas fa-calculator"></i> Rule-Based Analysis</h4>
+                    <div class="prediction-result {{ logic_behavior|lower }}">{{ logic_behavior }}</div>
+                    <div class="prediction-score">Score: {{ logic_score }}/100</div>
+                    <small style="color: #6c757d; margin-top: 0.5rem; display: block;">
+                        Based on driving patterns and thresholds
+                    </small>
+                </div>
+
+               
+                <div class="comparison-card ml-card">
+                    <h4><i class="fas fa-brain"></i> Machine Learning</h4>
+                    {% if ml_error %}
+                        <div class="prediction-result error">Error</div>
+                        <small class="prediction-error">{{ ml_error }}</small>
+                    {% else %}
+                        <div class="prediction-result {{ ml_behavior|lower }}">{{ ml_behavior }}</div>
+                        {% if ml_confidence > 0 %}
+                            <div class="prediction-confidence">{{ "%.1f"|format(ml_confidence) }}% confident</div>
+                        {% endif %}
+                        <small style="color: #6c757d; margin-top: 0.5rem; display: block;">
+                            Research-grade {{ ml_model_used }} model
+                        </small>
+                    {% endif %}
+                </div>
+            </div> 
+        </div>
+
+        <!-- Summary Tiles -->
+        <div class="tile-container">
+            {% set tiles = [
+            {'icon': 'fa-road', 'label': 'Distance', 'value': trip['distance_km'], 'unit': 'km'},
+            {'icon': 'fa-clock', 'label': 'Duration', 'value': trip['trip_duration'], 'unit': 'min'},
+            {'icon': 'fa-tachometer-alt', 'label': 'Avg Speed', 'value': trip['avg_speed_kmph'], 'unit': 'km/h'},
+            {'icon': 'fa-gauge-high', 'label': 'Max Speed', 'value': trip['max_speed'], 'unit': 'km/h'},
+            {'icon': 'fa-cog', 'label': 'Max RPM', 'value': trip['max_rpm'], 'unit': ''},
+            {'icon': 'fa-gas-pump', 'label': 'Fuel Used', 'value': trip['fuel_consumed'], 'unit': 'L'},
+            {'icon': 'fa-car-burst', 'label': 'Brake Events', 'value': trip['brake_events'], 'unit': ''},
+            {'icon': 'fa-gauge', 'label': 'Brake Pressure', 'value': trip['brake_pressure'], 'unit': 'bar'},
+            {'icon': 'fa-circle-notch', 'label': 'Steering Angle', 'value': trip['steering_angle'], 'unit': '°'},
+            {'icon': 'fa-rotate', 'label': 'Angular Velocity', 'value': trip['angular_velocity'], 'unit': 'rad/s'},
+            {'icon': 'fa-forward', 'label': 'Acceleration', 'value': trip['acceleration'], 'unit': 'm/s²'},
+            {'icon': 'fa-gears', 'label': 'Gear Position', 'value': trip['gear_position'], 'unit': ''},
+            {'icon': 'fa-circle-dot bnn', 'label': 'Tire Pressure', 'value': trip['tire_pressure'], 'unit': 'psi'},
+            {'icon': 'fa-car', 'label': 'Engine Load', 'value': trip['engine_load'], 'unit': '%'},
+            {'icon': 'fa-gauge-simple-high', 'label': 'Throttle Position', 'value': trip['throttle_position'], 'unit': '%'}
+            ] %}
+
+            {% for tile in tiles %}
+            <div class="tile">
+                <i class="fas {{ tile.icon }} tile-icon"></i>
+                <h4>{{ tile.label }}</h4>
+                <p>{{ tile.value }} <span class="unit">{{ tile.unit }}</span></p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Health Recommendation Card -->
+        <div class="health-card">
+            <div class="health-icon"><i class="fas fa-heart-pulse"></i></div>
+            <div class="health-content">
+                <h3>Health Recommendation</h3>
+                <p>{{ health_recommendation }}</p>
+            </div>
+        </div>
+
+        <!-- Enhanced Maintenance alerts section -->
+        <div class="maintenance-alerts">
+            <h3><i class="fas fa-exclamation-triangle"></i> Maintenance Alerts</h3>
+            <div class="alerts-container">
+                {% if maintenance_alerts %}
+                    {% for alert in maintenance_alerts %}
+                    <div class="alert-item alert-{{ alert.severity }}">
+                        <div class="alert-icon"><i class="fas {{ alert.icon }}"></i></div>
+                        <div class="alert-content">
+                            <div class="alert-title">{{ alert.title }}</div>
+                            <div class="alert-description">{{ alert.description }}</div>
+                        </div>
+                        <div class="alert-action">
+                            <button class="action-btn" onclick="scheduleService('{{ alert.alert_type }}')">Schedule</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert-item alert-info">
+                        <div class="alert-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="alert-content">
+                            <div class="alert-title">No Maintenance Required</div>
+                            <div class="alert-description">All vehicle systems are functioning normally.</div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-grid">
+            <div class="chart-section speed-rpm-chart">
+                <div class="chart-header">
+                    <div class="chart-title">Speed & RPM Analysis</div>
+                    <div class="chart-controls">
+                        <button class="chart-control-btn active" data-view="line">Line</button>
+                        <button class="chart-control-btn" data-view="bar">Bar</button>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="speedRpmChart"></canvas></div>
+            </div>
+
+            <div class="chart-section brake-chart">
+                <div class="chart-header">
+                    <div class="chart-title">Braking Analysis</div>
+                </div>
+                <div class="chart-container"><canvas id="brakeChart"></canvas></div>
+            </div>
+
+            <div class="chart-section acceleration-chart">
+                <div class="chart-header">
+                    <div class="chart-title">Engine Performance</div>
+                </div>
+                <div class="chart-container"><canvas id="accelerationChart"></canvas></div>
+            </div>
+
+            <div class="chart-section steering-chart">
+                <div class="chart-header">
+                    <div class="chart-title">Steering Dynamics</div>
+                </div>
+                <div class="chart-container"><canvas id="steeringChart"></canvas></div>
+            </div>
+
+            <div class="chart-section fuel-chart">
+                <div class="chart-header">
+                    <div class="chart-title">Fuel Consumption & Efficiency</div>
+                </div>
+                <div class="chart-container"><canvas id="fuelChart"></canvas></div>
+                <div class="chart-insights">
+                    <div class="insight-item">
+                        <div class="insight-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div class="insight-text">Efficiency: <strong>{{ (trip['distance_km'] / trip['fuel_consumed'])|round(2) }} km/L</strong></div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-icon"><i class="fas fa-coins"></i></div>
+                        <div class="insight-text">Est. Cost: <strong>${{ (trip['fuel_consumed'] * 1.50)|round(2) }}</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Driving Score Chart -->
+            <div class="chart-section score-chart">
+                <div class="chart-header">
+                    <div class="chart-title">Driving Performance Metrics</div>
+                </div>
+                <div class="chart-container"><canvas id="drivingScoreChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Centered back button -->
+        <div class="action-buttons">
+            <a href="{{ url_for('dashboard') }}" class="back-button"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            <a href="#" class="export-button" id="exportReport"><i class="fas fa-file-export"></i> Export Report</a>
+        </div>
+        {% else %}
+        <div class="error-container">
+            <i class="fas fa-exclamation-circle error-icon"></i>
+            <p class="error-message">No trip details found.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-car-side"></i>
+                    <span>FleetTrack </span>
+                </div>
+                <div class="footer-links">
+                    <a href="#">About</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Contact</a>
+                </div>
+                <div class="footer-social">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="copyright">
+                &copy; 2025 FleetTrack Analytics. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    {% if trip %}
+    <script>
+        // Enhanced data processing with ML integration
+        const tripData = {
+            speed: parseFloat("{{ trip['avg_speed_kmph'] | default(0) }}"),
+            maxSpeed: parseFloat("{{ trip['max_speed'] | default(0) }}"),
+            rpm: parseFloat("{{ trip['max_rpm'] | default(0) }}"),
+            brakeEvents: parseFloat("{{ trip['brake_events'] | default(0) }}"),
+            brakePressure: parseFloat("{{ trip['brake_pressure'] | default(0) }}"),
+            fuelConsumed: parseFloat("{{ trip['fuel_consumed'] | default(0) }}"),
+            fuelEfficiency: parseFloat("{{ (trip['distance_km'] / trip['fuel_consumed'])|round(2) }}"),
+            steeringAngle: parseFloat("{{ trip['steering_angle'] | default(0) }}"),
+            angularVelocity: parseFloat("{{ trip['angular_velocity'] | default(0) }}"),
+            acceleration: parseFloat("{{ trip['acceleration'] | default(0) }}"),
+            gearPosition: parseFloat("{{ trip['gear_position'] | default(0) }}"),
+            tirePressure: parseFloat("{{ trip['tire_pressure'] | default(0) }}"),
+            engineLoad: parseFloat("{{ trip['engine_load'] | default(0) }}"),
+            throttlePosition: parseFloat("{{ trip['throttle_position'] | default(0) }}"),
+            tripDuration: parseFloat("{{ trip['trip_duration'] | default(0) }}"),
+            distance: parseFloat("{{ trip['distance_km'] | default(0) }}"),
+            // Original scoring data
+            logicScore: parseFloat("{{ logic_score | default(0) }}"),
+            logicBehavior: "{{ logic_behavior }}",
+            // Enhanced ML data
+            mlBehavior: "{{ ml_behavior }}",
+            mlConfidence: parseFloat("{{ ml_confidence|default(0) }}"),
+            mlModelUsed: "{{ ml_model_used }}",
+            mlError: "{{ ml_error|default('') }}"
+        };
+
+        // Log ML integration status for debugging
+        console.log('ML Integration Status:', {
+            modelUsed: tripData.mlModelUsed,
+            behavior: tripData.mlBehavior,
+            confidence: tripData.mlConfidence,
+            error: tripData.mlError
+        });
+
+        // Service scheduling function
+        function scheduleService(alertType) {
+            alert("Service scheduling for: " + alertType + "\n(This would connect to a booking system in production).");
+        }
+    </script>
+    <script src="{{ url_for('static', filename='trip_detail.js') }}"></script>
+
+    {% endif %}
+</body>
+
+</html>

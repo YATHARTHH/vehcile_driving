@@ -1,0 +1,147 @@
+2025-07-31 02:43:01,633 [INFO] Loaded 1379 rows from database
+2025-07-31 02:43:01,637 [INFO] Tuning Random Forest...
+2025-07-31 02:43:08,391 [INFO] Random Forest best CV F1-macro: 0.646
+2025-07-31 02:43:08,392 [INFO] Tuning Gradient Boosting...
+2025-07-31 02:43:11,453 [INFO] Gradient Boosting best CV F1-macro: 0.639
+2025-07-31 02:43:11,453 [INFO] Selected best model: Random Forest (CV F1=0.646)
+2025-07-31 02:43:11,760 [INFO] Test Accuracy: 0.976
+2025-07-31 02:43:11,760 [INFO] Classification Report:
+              precision    recall  f1-score   support
+
+     Average       0.95      1.00      0.97       184
+        Good       1.00      0.99      0.99       201
+       Risky       1.00      0.76      0.86        29
+
+    accuracy                           0.98       414
+   macro avg       0.98      0.91      0.94       414
+weighted avg       0.98      0.98      0.97       414
+
+2025-07-31 02:43:12,984 [INFO] Optimize complete. Artifacts & plots saved.
+2025-07-31 03:30:38,893 [INFO] Loaded 1379 rows from database
+2025-07-31 03:30:38,899 [INFO] Tuning Random Forest...
+2025-07-31 03:30:46,090 [INFO] Random Forest best CV F1-macro: 0.646
+2025-07-31 03:30:46,090 [INFO] Random Forest best params: {'max_depth': 10, 'min_samples_leaf': 4, 'n_estimators': 100}
+2025-07-31 03:30:46,091 [INFO] Tuning Gradient Boosting...
+2025-07-31 03:30:49,112 [INFO] Gradient Boosting best CV F1-macro: 0.639
+2025-07-31 03:30:49,112 [INFO] Gradient Boosting best params: {'learning_rate': 0.05, 'max_depth': 3, 'n_estimators': 100}
+2025-07-31 03:30:49,112 [INFO] Selected best model: Random Forest (CV F1=0.646)
+2025-07-31 03:30:49,398 [INFO] Test Accuracy: 0.976
+2025-07-31 03:30:49,399 [INFO] Test Precision: 0.983
+2025-07-31 03:30:49,399 [INFO] Test Recall: 0.915
+2025-07-31 03:30:49,400 [INFO] Test F1: 0.943
+2025-07-31 03:30:49,400 [INFO] Classification Report:
+              precision    recall  f1-score   support
+
+     Average       0.95      1.00      0.97       184
+        Good       1.00      0.99      0.99       201
+       Risky       1.00      0.76      0.86        29
+
+    accuracy                           0.98       414
+   macro avg       0.98      0.91      0.94       414
+weighted avg       0.98      0.98      0.97       414
+
+2025-07-31 03:30:49,454 [INFO] Baseline vs Optimized Comparison:
+2025-07-31 03:30:49,457 [INFO]              Metric Baseline RF Optimized RF Improvement
+      Test Accuracy     100.00%       97.58%     -2.42%*
+Cross-validation F1      99.69%       64.57%     -35.13%
+     Generalization       Lower       Higher    Improved
+2025-07-31 03:30:50,002 [INFO] Feature Importance:
+2025-07-31 03:30:50,002 [INFO] avg_speed_kmph: 0.2794
+2025-07-31 03:30:50,003 [INFO] max_speed: 0.2175
+2025-07-31 03:30:50,003 [INFO] distance_km: 0.1978
+2025-07-31 03:30:50,004 [INFO] trip_duration: 0.1678
+2025-07-31 03:30:50,004 [INFO] throttle_position: 0.0972
+2025-07-31 03:30:50,005 [INFO] engine_load: 0.0402
+2025-07-31 03:30:50,405 [INFO] Optimized Model Confusion Matrix:
+2025-07-31 03:30:50,407 [INFO]          Average  Good  Risky
+Average      184     0      0
+Good           3   198      0
+Risky          7     0     22
+2025-07-31 03:30:50,467 [INFO] Optimize complete. Artifacts & plots saved.
+2025-07-31 03:37:24,666 [INFO] Loaded 1379 rows from database
+2025-07-31 03:37:24,666 [INFO] Using CV strategy: group
+2025-07-31 03:37:24,674 [INFO] Tuning Random Forest with group CV...
+2025-07-31 03:37:31,025 [INFO] Random Forest best CV F1-macro: 0.646
+2025-07-31 03:37:31,026 [INFO] Random Forest best params: {'max_depth': 10, 'min_samples_leaf': 4, 'n_estimators': 100}
+2025-07-31 03:37:31,026 [INFO] Tuning Gradient Boosting with group CV...
+2025-07-31 03:37:33,944 [INFO] Gradient Boosting best CV F1-macro: 0.639
+2025-07-31 03:37:33,944 [INFO] Gradient Boosting best params: {'learning_rate': 0.05, 'max_depth': 3, 'n_estimators': 100}
+2025-07-31 03:37:33,945 [INFO] Selected best model: Random Forest (CV F1=0.646)
+2025-07-31 03:37:34,252 [INFO] Test Accuracy: 0.976
+2025-07-31 03:37:34,253 [INFO] Test Precision: 0.983
+2025-07-31 03:37:34,253 [INFO] Test Recall: 0.915
+2025-07-31 03:37:34,254 [INFO] Test F1: 0.943
+2025-07-31 03:37:34,254 [INFO] Classification Report:
+              precision    recall  f1-score   support
+
+     Average       0.95      1.00      0.97       184
+        Good       1.00      0.99      0.99       201
+       Risky       1.00      0.76      0.86        29
+
+    accuracy                           0.98       414
+   macro avg       0.98      0.91      0.94       414
+weighted avg       0.98      0.98      0.97       414
+
+2025-07-31 03:37:34,273 [INFO] Baseline vs Optimized Comparison:
+2025-07-31 03:37:34,276 [INFO]                      Metric Baseline RF Optimized RF Improvement
+              Test Accuracy     100.00%       97.58%     -2.42%*
+Cross-validation F1 (GROUP)      99.69%       64.57%     -35.13%
+             Generalization       Lower       Higher    Improved
+2025-07-31 03:37:34,276 [INFO] CV Strategy: group
+2025-07-31 03:37:35,221 [INFO] Feature Importance:
+2025-07-31 03:37:35,223 [INFO] avg_speed_kmph: 0.2794
+2025-07-31 03:37:35,224 [INFO] max_speed: 0.2175
+2025-07-31 03:37:35,224 [INFO] distance_km: 0.1978
+2025-07-31 03:37:35,225 [INFO] trip_duration: 0.1678
+2025-07-31 03:37:35,226 [INFO] throttle_position: 0.0972
+2025-07-31 03:37:35,227 [INFO] engine_load: 0.0402
+2025-07-31 03:37:35,661 [INFO] Optimized Model Confusion Matrix:
+2025-07-31 03:37:35,663 [INFO]          Average  Good  Risky
+Average      184     0      0
+Good           3   198      0
+Risky          7     0     22
+2025-07-31 03:37:35,715 [INFO] Optimize complete. Artifacts & plots saved.
+2025-07-31 03:43:38,711 [INFO] Loaded 1379 rows from database
+2025-07-31 03:43:38,712 [INFO] Using CV strategy: group
+2025-07-31 03:43:38,719 [INFO] GridSearchCV Configuration: 5-fold group CV
+2025-07-31 03:43:38,720 [INFO] Tuning Random Forest with 5-fold group CV...
+2025-07-31 03:43:47,162 [INFO] Random Forest best 5-fold CV F1-macro: 0.612
+2025-07-31 03:43:47,163 [INFO] Random Forest best params: {'max_depth': 10, 'min_samples_leaf': 2, 'n_estimators': 100}
+2025-07-31 03:43:47,163 [INFO] Tuning Gradient Boosting with 5-fold group CV...
+2025-07-31 03:43:51,186 [INFO] Gradient Boosting best 5-fold CV F1-macro: 0.634
+2025-07-31 03:43:51,186 [INFO] Gradient Boosting best params: {'learning_rate': 0.1, 'max_depth': 3, 'n_estimators': 50}
+2025-07-31 03:43:51,187 [INFO] Selected best model: Gradient Boosting (5-fold CV F1=0.634)
+2025-07-31 03:43:51,658 [INFO] Test Accuracy: 0.990
+2025-07-31 03:43:51,659 [INFO] Test Precision: 0.993
+2025-07-31 03:43:51,659 [INFO] Test Recall: 0.954
+2025-07-31 03:43:51,659 [INFO] Test F1: 0.972
+2025-07-31 03:43:51,660 [INFO] Classification Report:
+              precision    recall  f1-score   support
+
+     Average       0.98      1.00      0.99       184
+        Good       1.00      1.00      1.00       201
+       Risky       1.00      0.86      0.93        29
+
+    accuracy                           0.99       414
+   macro avg       0.99      0.95      0.97       414
+weighted avg       0.99      0.99      0.99       414
+
+2025-07-31 03:43:51,686 [INFO] Baseline vs Optimized Comparison:
+2025-07-31 03:43:51,689 [INFO]                             Metric Baseline RF Optimized RF Improvement
+                     Test Accuracy     100.00%       99.03%     -0.97%*
+Cross-validation F1 (5-Fold GROUP)      99.69%       63.41%     -36.29%
+                    Generalization       Lower       Higher    Improved
+2025-07-31 03:43:51,689 [INFO] GridSearchCV: 5-Fold group
+2025-07-31 03:44:00,659 [INFO] Feature Importance:
+2025-07-31 03:44:00,660 [INFO] avg_speed_kmph: 0.4229
+2025-07-31 03:44:00,661 [INFO] max_speed: 0.2998
+2025-07-31 03:44:00,662 [INFO] distance_km: 0.0957
+2025-07-31 03:44:00,663 [INFO] trip_duration: 0.0938
+2025-07-31 03:44:00,665 [INFO] throttle_position: 0.0525
+2025-07-31 03:44:00,666 [INFO] engine_load: 0.0353
+2025-07-31 03:44:02,979 [INFO] Optimized Model Confusion Matrix (5-Fold CV):
+2025-07-31 03:44:02,983 [INFO]          Average  Good  Risky
+Average      184     0      0
+Good           0   201      0
+Risky          4     0     25
+2025-07-31 03:44:03,026 [INFO] Optimize complete. Artifacts & plots saved.

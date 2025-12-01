@@ -1,0 +1,18 @@
+2025-07-31 03:10:13,531 - INFO - Starting hyperparameter optimization with overfitting prevention
+2025-07-31 03:10:13,624 - INFO - Loaded 5855 trips from database
+2025-07-31 03:10:13,664 - INFO - Target classes: ['Average' 'Good' 'Risky']
+2025-07-31 03:10:13,672 - INFO - Training baseline model with conservative parameters
+2025-07-31 03:10:15,257 - INFO - Baseline model well-generalized
+2025-07-31 03:10:15,258 - INFO - Starting conservative hyperparameter search
+2025-07-31 03:10:15,259 - INFO - Grid search will test 81 parameter combinations
+2025-07-31 03:10:15,260 - INFO - Grid search started
+2025-07-31 03:10:35,707 - INFO - Grid search completed in 20.45 seconds
+2025-07-31 03:10:35,709 - INFO - Best CV F1-score: 0.9709
+2025-07-31 03:10:35,710 - INFO - Best parameters: {'class_weight': 'balanced', 'max_depth': 12, 'max_features': 'sqrt', 'min_samples_leaf': 5, 'min_samples_split': 10, 'n_estimators': 150}
+2025-07-31 03:10:37,868 - INFO - Optimized model well-generalized
+2025-07-31 03:10:37,870 - INFO - Model stability maintained
+2025-07-31 03:11:18,169 - INFO - Feature importance comparison plot saved
+2025-07-31 03:11:18,170 - INFO - Evaluating models for selection
+2025-07-31 03:11:18,174 - INFO - Moderate recommendation for optimized model
+2025-07-31 03:11:25,136 - INFO - Confusion matrices comparison saved
+2025-07-31 03:11:25,137 - INFO - Saving Optimized Random Forest with moderate confidence

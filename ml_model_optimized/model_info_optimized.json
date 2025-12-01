@@ -1,0 +1,29 @@
+{
+    "model_name": "Optimized Random Forest",
+    "best_params": {
+        "n_estimators": 100,
+        "min_samples_split": 5,
+        "min_samples_leaf": 1,
+        "max_features": "sqrt",
+        "max_depth": 15,
+        "bootstrap": false
+    },
+    "features": [
+        "avg_speed_kmph",
+        "max_speed",
+        "throttle_position",
+        "engine_load",
+        "trip_duration",
+        "distance_km"
+    ],
+    "f1_score_cv": 1.0,
+    "accuracy_test": 1.0,
+    "needs_scaling": false,
+    "target_classes": [
+        "Average",
+        "Good",
+        "Risky"
+    ],
+    "training_data_size": 965,
+    "saved_at": "2025-07-31 03:53:46"
+}
