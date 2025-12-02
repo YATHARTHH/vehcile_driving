@@ -22,6 +22,11 @@
   --grid-gap: 30px;
 }
 
+/* ==== RESET & BASE STYLES ==== */
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   margin: 0;
@@ -150,6 +155,7 @@ body {
   align-items: center;
   justify-content: center;
   margin-right: 20px;
+  flex-shrink: 0;
 }
 
 .stat-icon i {
@@ -229,17 +235,26 @@ body {
   background: var(--background);
   border: none;
   border-radius: 8px;
-  padding: 8px 16px;
+  padding: 10px 18px;
   font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   transition: var(--transition);
+  color: var(--dark-text);
+  font-size: 14px;
 }
 
 .action-btn:hover {
-  background: var(--hover-bg);
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.action-btn i {
+  font-size: 14px;
 }
 
 .time-filter {
@@ -251,6 +266,17 @@ body {
   cursor: pointer;
   transition: var(--transition);
   outline: none;
+  color: var(--dark-text);
+}
+
+.time-filter:hover {
+  border-color: var(--primary-color);
+  background: var(--hover-bg);
+}
+
+.time-filter:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 /* ==== HEADINGS & TYPOGRAPHY ==== */
@@ -313,7 +339,6 @@ table {
   font-size: 0.95em;
 }
 
-/* Table Heading */
 table thead {
   background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
   color: var(--light-text);
@@ -328,6 +353,7 @@ table th {
   text-transform: uppercase;
   border: none;
   position: relative;
+  white-space: nowrap;
 }
 
 table th:first-child {
@@ -348,7 +374,6 @@ table th:not(:last-child):after {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Table Rows and Cells */
 table td {
   padding: 16px;
   text-align: center;
@@ -370,7 +395,6 @@ table tr:last-child td:last-child {
   border-bottom-right-radius: var(--border-radius);
 }
 
-/* Hover Effect on Rows */
 table tbody tr {
   transition: var(--transition);
 }
@@ -380,7 +404,6 @@ table tbody tr:hover {
   transform: translateX(5px);
 }
 
-/* Last Column (Details Link) Styling */
 table td:last-child a {
   color: var(--primary-color);
   text-decoration: none;
@@ -399,9 +422,270 @@ table td:last-child a:hover {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
-/* Table Row Effect */
 table tr:nth-child(even) {
   background-color: rgba(245, 247, 250, 0.5);
+}
+
+/* ==== MODAL STYLES ==== */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+  }
+  to { 
+    opacity: 1; 
+  }
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 5% auto;
+  padding: 0;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--dark-text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-header h2:after {
+  display: none;
+}
+
+.modal-header i {
+  color: var(--primary-color);
+}
+
+.close {
+  color: #6b7280;
+  font-size: 28px;
+  font-weight: 300;
+  cursor: pointer;
+  transition: var(--transition);
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close:hover {
+  color: var(--error-color);
+  background: rgba(239, 68, 68, 0.1);
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 28px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+.filter-group {
+  margin-bottom: 20px;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--dark-text);
+  font-size: 14px;
+}
+
+.filter-group input,
+.filter-group select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: var(--transition);
+  background: white;
+  color: var(--dark-text);
+  font-family: inherit;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.filter-group input::placeholder {
+  color: #9ca3af;
+}
+
+.modal-footer {
+  padding: 20px 28px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: var(--background);
+  border-radius: 0 0 16px 16px;
+}
+
+.modal-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-btn-secondary {
+  background-color: white;
+  color: var(--dark-text);
+  border: 2px solid var(--border-color);
+}
+
+.modal-btn-secondary:hover {
+  background-color: var(--background);
+  border-color: var(--medium-text);
+  transform: translateY(-2px);
+}
+
+.modal-btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  border: none;
+}
+
+.modal-btn-primary:hover {
+  background: linear-gradient(135deg, var(--primary-dark), #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+}
+
+.export-option {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+  background: white;
+}
+
+.export-option:hover {
+  border-color: var(--primary-color);
+  background-color: var(--hover-bg);
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.export-option input[type="radio"] {
+  margin-right: 14px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.export-option-content {
+  flex: 1;
+}
+
+.export-option-title {
+  font-weight: 600;
+  color: var(--dark-text);
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.export-option-desc {
+  font-size: 13px;
+  color: var(--medium-text);
+  line-height: 1.4;
+}
+
+.filter-active {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border-color: var(--primary-color) !important;
+}
+
+.filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--error-color), #dc2626);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 8px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 /* ==== CHART SECTIONS ==== */
@@ -420,11 +704,13 @@ table tr:nth-child(even) {
   transition: var(--transition);
   position: relative;
   overflow: hidden;
+  border: 1px solid transparent;
 }
 
 .chart-container:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-color);
 }
 
 .chart-header {
@@ -432,6 +718,8 @@ table tr:nth-child(even) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--background);
 }
 
 .chart-title {
@@ -451,6 +739,7 @@ table tr:nth-child(even) {
 .chart-options i:hover {
   background: var(--hover-bg);
   color: var(--primary-color);
+  transform: rotate(90deg);
 }
 
 .chart-container.pie-chart {
@@ -462,7 +751,6 @@ table tr:nth-child(even) {
   margin: 0 auto;
 }
 
-/* Chart Canvas */
 canvas {
   width: 100% !important;
   height: 300px !important;
@@ -479,7 +767,7 @@ canvas {
 
 .no-data {
   text-align: center;
-  padding: 50px;
+  padding: 60px 50px;
   background: var(--card-bg);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
@@ -487,47 +775,60 @@ canvas {
 }
 
 .no-data i {
-  font-size: 3rem;
-  color: var(--medium-text);
+  font-size: 4rem;
+  color: var(--primary-color);
   margin-bottom: 20px;
+  opacity: 0.7;
 }
 
 .no-data h2 {
   margin-top: 0;
+  color: var(--dark-text);
 }
 
 .no-data p {
   color: var(--medium-text);
-  margin-bottom: 25px;
+  margin-bottom: 30px;
+  line-height: 1.6;
 }
 
 .primary-btn {
-  background: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
   color: white;
   border: none;
-  padding: 12px 24px;
+  padding: 14px 28px;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  font-size: 15px;
 }
 
 .primary-btn:hover {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, var(--primary-dark), #1e40af);
   transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+}
+
+.primary-btn i {
+  font-size: 16px;
 }
 
 /* ==== FOOTER ==== */
 .dashboard-footer {
   text-align: center;
   color: var(--medium-text);
-  padding: 20px 0;
-  margin-top: 40px;
-  border-top: 1px solid var(--border-color);
+  padding: 30px 0;
+  margin-top: 60px;
+  border-top: 2px solid var(--border-color);
+}
+
+.dashboard-footer p {
+  margin: 0;
+  font-size: 14px;
 }
 
 /* ==== RESPONSIVE STYLES ==== */
@@ -659,7 +960,17 @@ canvas {
   table td:nth-child(6):before { content: "Fuel Consumed (L)"; }
   table td:nth-child(7):before { content: "Brake Events"; }
   table td:nth-child(8):before { content: "Steering Angle"; }
-  table td:nth-child(9):before { content: "View Details"; }
+  table td:nth-child(9):before { content: "Angular Velocity"; }
+  table td:nth-child(10):before { content: "Acceleration"; }
+  table td:nth-child(11):before { content: "Gear"; }
+  table td:nth-child(12):before { content: "Tire Pressure"; }
+  table td:nth-child(13):before { content: "Engine Load"; }
+  table td:nth-child(14):before { content: "Throttle Position"; }
+  table td:nth-child(15):before { content: "Brake Pressure"; }
+  table td:nth-child(16):before { content: "Trip Duration"; }
+  table td:nth-child(17):before { content: "Start Location"; }
+  table td:nth-child(18):before { content: "End Location"; }
+  table td:nth-child(19):before { content: "View Details"; }
   
   table td:last-child {
     border-bottom: none;
@@ -674,6 +985,15 @@ canvas {
   
   canvas {
     height: 250px !important;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 10% auto;
+  }
+  
+  .modal-body {
+    max-height: 50vh;
   }
 }
 
@@ -692,5 +1012,26 @@ canvas {
   
   canvas {
     height: 220px !important;
+  }
+  
+  .no-data {
+    padding: 40px 30px;
+  }
+  
+  .stat-card {
+    padding: 20px;
+  }
+  
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .stat-icon i {
+    font-size: 1.5rem;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
   }
 }
