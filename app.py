@@ -326,7 +326,20 @@ def chatbot():
     chatbot_instance = VehicleChatbot()
     response = chatbot_instance.get_response(message, user_data)
     
-    return {'response': response}
+    return jsonify({'response': response})
+
+
+@app.route("/chatbot/suggestions")
+@login_required
+def chatbot_suggestions():
+    suggestions = [
+        "How can I improve my fuel efficiency?",
+        "Analyze my recent trips",
+        "Give me driving tips",
+        "What's my driving score?",
+        "Show me maintenance advice"
+    ]
+    return jsonify({'suggestions': suggestions})
 
 
 @app.route("/alerts")
