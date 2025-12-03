@@ -38,7 +38,7 @@ def generate_random_trip_data():
         'gear_position': gear_position,
         'tire_pressure': tire_pressure,
         'engine_load': engine_load,
-        'throttle_position':throttle_position,
+        'throttle_position': throttle_position,
         'brake_pressure': brake_pressure,
         'trip_duration': trip_duration,
         'start_location': start_location,
