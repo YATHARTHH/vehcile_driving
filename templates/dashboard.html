@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Professional Vehicle Trip Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='chatbot.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -380,6 +381,32 @@
         </script>
         <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
         <script src="{{ url_for('static', filename='export-filter.js') }}"></script>
+        <script src="{{ url_for('static', filename='chatbot.js') }}"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                fetch('/chatbot/suggestions')
+                .then(response => response.json())
+                .then(data => {
+                    const chatbotMessages = document.getElementById('chatbotMessages');
+                    const suggestionsDiv = document.createElement('div');
+                    suggestionsDiv.className = 'quick-suggestions';
+                    suggestionsDiv.innerHTML = '<div class="suggestions-title">Quick questions:</div>';
+                    
+                    data.suggestions.forEach(suggestion => {
+                        const btn = document.createElement('button');
+                        btn.className = 'suggestion-btn';
+                        btn.textContent = suggestion;
+                        btn.onclick = () => {
+                            document.getElementById('chatbotInput').value = suggestion;
+                            document.getElementById('chatbotSend').click();
+                        };
+                        suggestionsDiv.appendChild(btn);
+                    });
+                    
+                    chatbotMessages.appendChild(suggestionsDiv);
+                });
+            });
+        </script>
         
         {% else %}
         <div class="no-data-container">

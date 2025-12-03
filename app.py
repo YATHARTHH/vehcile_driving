@@ -16,6 +16,8 @@ from ml_model.maintenance_logic import (
 )
 
 from werkzeug.security import generate_password_hash, check_password_hash
+from chatbot.chatbot_logic import VehicleChatbot
+from flask import jsonify
 
 # Logging Setup
 logging.basicConfig(level=logging.INFO)
@@ -25,8 +27,8 @@ try:
     from ml_model.model_utils import load_artifacts, predict_behavior
     model, scaler, le, model_info = load_artifacts()
     ML_MODEL_LOADED = True
-    logging.info(f"✅ ML Pipeline Connected: {model_info['best_model_name']} ready for predictions")
-except Exception as e:
+    logging.info(f"✅ ML Pipeline Connected: {model_info.get('best_model_name', 'Unknown')} ready for predictions")
+except Exception:
     logging.warning("⚠️  ML model loading failed", exc_info=True)
     ML_MODEL_LOADED = False
     model = scaler = le = model_info = None
@@ -183,7 +185,8 @@ def dashboard():
         ORDER BY trip_date DESC
         LIMIT 15
     ''', (session['user_id'],))
-    trips = [dict(zip([column[0] for column in cur.description], row)) for row in cur.fetchall()]
+    rows = cur.fetchall()
+    trips = [dict(zip([column[0] for column in cur.description], row)) for row in rows]
 
     alert_count = cur.execute(
         "SELECT COUNT(*) FROM alerts WHERE user_id = ? AND resolved = FALSE AND timestamp >= date('now','-30 days')",
@@ -193,7 +196,7 @@ def dashboard():
 
     valid_trips = [
         trip for trip in trips
-        if trip['distance_km'] > 0 and trip['avg_speed_kmph'] > 0 and trip['max_rpm'] is not None
+        if trip.get('distance_km', 0) > 0 and trip.get('avg_speed_kmph', 0) > 0 and trip.get('max_rpm') is not None
     ]
     return render_template('dashboard.html', trips=valid_trips, alert_count=alert_count)
 
@@ -202,14 +205,15 @@ def dashboard():
 @login_required
 def trip_detail(trip_id):
     conn = get_db_connection()
-    trip = conn.execute("SELECT * FROM trips WHERE id = ?", (trip_id,)).fetchone()
+    trip_row = conn.execute("SELECT * FROM trips WHERE id = ?", (trip_id,)).fetchone()
     conn.close()
 
-    if not trip:
+    if not trip_row:
         return "Trip not found", 404
 
     try:
-        trip_dict = dict(trip)
+        trip_dict = dict(trip_row)
+
         # Required trip fields
         field_names = [
             "avg_speed_kmph", "max_speed", "max_rpm", "fuel_consumed", "brake_events",
@@ -234,24 +238,33 @@ def trip_detail(trip_id):
         if ML_MODEL_LOADED:
             try:
                 ml_result = predict_behavior(trip_dict, model, scaler, le, model_info)
-                ml_behavior = ml_result['behavior_class']
-                ml_confidence = ml_result['confidence']
-                ml_model_used = ml_result['model_used']
+                ml_behavior = ml_result.get('behavior_class', 'Unknown')
+                ml_confidence = ml_result.get('confidence', 0.0)
+                ml_model_used = ml_result.get('model_used', 'Unknown')
                 if 'error' in ml_result:
                     ml_error = ml_result['error']
             except Exception as e:
                 ml_error = str(e)
+                logging.warning(f"ML prediction failed: {e}")
         else:
             ml_error = "ML pipeline not loaded"
 
         # Maintenance alerts and health recommendation
         maintenance_alerts, health_recommendation = build_alerts(trip_dict)
+        # Save alerts to DB if any
         if maintenance_alerts:
-            save_alerts_to_db(maintenance_alerts, session['user_id'], trip_id)
+            try:
+                save_alerts_to_db(maintenance_alerts, session.get('user_id'), trip_id)
+            except Exception:
+                logging.exception("Failed to save maintenance alerts to DB")
 
+        # Combine ML and logic recommendations
         if ml_behavior != "Unknown":
-            ml_health = get_health_recommendation(ml_behavior)
-            combined_recommendation = f"{health_recommendation}\n\n{ml_health}"
+            try:
+                ml_health = get_health_recommendation(ml_behavior)
+            except Exception:
+                ml_health = ""
+            combined_recommendation = f"{health_recommendation}\n\n{ml_health}" if ml_health else health_recommendation
         else:
             combined_recommendation = health_recommendation
 
@@ -268,7 +281,7 @@ def trip_detail(trip_id):
 
     return render_template(
         "trip_detail.html",
-        trip=trip,
+        trip=trip_dict,
         logic_score=logic_score,
         logic_behavior=logic_behavior,
         ml_behavior=ml_behavior,
@@ -289,6 +302,31 @@ def trip_detail(trip_id):
         engine_load=trip_dict.get("engine_load"),
         trip_duration=trip_dict.get("trip_duration")
     )
+
+
+@app.route("/chatbot", methods=["POST"])
+@login_required
+def chatbot():
+    message = request.json.get('message', '').strip()
+    if not message:
+        return {'response': 'Please enter a message.'}
+    
+    # Get user's recent trip data for context
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        SELECT distance_km, avg_speed_kmph, max_rpm, fuel_consumed, brake_events
+        FROM trips WHERE user_id = ? ORDER BY trip_date DESC LIMIT 5
+    ''', (session['user_id'],))
+    rows = cur.fetchall()
+    recent_trips = [dict(zip([col[0] for col in cur.description], row)) for row in rows]
+    conn.close()
+    
+    user_data = {'recent_trips': recent_trips}
+    chatbot_instance = VehicleChatbot()
+    response = chatbot_instance.get_response(message, user_data)
+    
+    return {'response': response}
 
 
 @app.route("/alerts")
