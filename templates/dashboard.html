@@ -16,17 +16,19 @@
 </head>
 
 <body>
-    <header class="dashboard-header">
-        <div class="dashboard-container">
-            <nav class="top-nav">
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
                 <div class="logo">
-                    <i class="fas fa-car-side"></i>
+                    <i class="fas fa-car-side logo-icon"></i>
                     <span>FleetTrack</span>
                 </div>
-                <div class="nav-links">
-                    <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                </div>
-            </nav>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </header>
 
