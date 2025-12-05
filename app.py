@@ -18,6 +18,7 @@ from ml_model.maintenance_logic import (
 from werkzeug.security import generate_password_hash, check_password_hash
 from chatbot.chatbot_logic import VehicleChatbot
 from flask import jsonify
+from route_optimization.route_engine import RouteOptimizer, geocode_location
 
 # Logging Setup
 logging.basicConfig(level=logging.INFO)
@@ -368,6 +369,139 @@ def model_info_page():
     if not ML_MODEL_LOADED:
         return render_template("model_info.html", model_loaded=False)
     return render_template("model_info.html", model_loaded=True, model_info=model_info)
+
+
+@app.route("/route-planner")
+@login_required
+def route_planner():
+    return render_template("route_planner.html")
+
+
+@app.route("/api/save-route", methods=["POST"])
+@login_required
+def save_route():
+    try:
+        data = request.get_json()
+        route_data = data.get('route')
+        
+        if not route_data:
+            return jsonify({'success': False, 'error': 'No route data provided'})
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Create saved_routes table if it doesn't exist
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS saved_routes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                route_name TEXT,
+                start_location TEXT,
+                end_location TEXT,
+                route_type TEXT,
+                distance_km REAL,
+                travel_time_minutes INTEGER,
+                fuel_consumption REAL,
+                fuel_cost REAL,
+                efficiency_score INTEGER,
+                saved_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        ''')
+        
+        # Insert saved route
+        cur.execute('''
+            INSERT INTO saved_routes 
+            (user_id, route_name, start_location, end_location, route_type, 
+             distance_km, travel_time_minutes, fuel_consumption, fuel_cost, efficiency_score)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            session['user_id'],
+            route_data['name'],
+            data.get('start_location', ''),
+            data.get('end_location', ''),
+            route_data['type'],
+            route_data['distance_km'],
+            route_data['travel_time_minutes'],
+            route_data['fuel_consumption'],
+            route_data['fuel_cost'],
+            route_data['efficiency_score']
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Route saved successfully'})
+        
+    except Exception as e:
+        logging.error(f"Save route error: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route("/api/route-optimize", methods=["POST"])
+@login_required
+def optimize_route():
+    try:
+        data = request.get_json()
+        start_coords = data.get('start_coords')
+        end_coords = data.get('end_coords')
+        priority = data.get('priority', 'balanced')
+        
+        if not start_coords or not end_coords:
+            return jsonify({'success': False, 'error': 'Missing coordinates'})
+        
+        # Get user's vehicle data for personalization
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT 15.0 as avg_efficiency,
+                   AVG(engine_load) as avg_engine_load,
+                   COUNT(*) as trip_count
+            FROM trips 
+            WHERE user_id = ? AND distance_km > 0
+        ''', (session['user_id'],))
+        
+        user_stats = cur.fetchone()
+        conn.close()
+        
+        # Prepare user preferences and vehicle data
+        user_preferences = {
+            'priority': priority,
+            'fuel_efficiency': user_stats['avg_efficiency'] if user_stats['avg_efficiency'] else 15.0
+        }
+        
+        user_vehicle_data = {
+            'avg_engine_load': user_stats['avg_engine_load'] if user_stats['avg_engine_load'] else 50
+        }
+        
+        user_history = {
+            'avg_fuel_efficiency': user_stats['avg_efficiency'] if user_stats['avg_efficiency'] else 15.0,
+            'preferred_route_type': priority
+        }
+        
+        # Initialize route optimizer
+        optimizer = RouteOptimizer()
+        
+        # Generate optimized routes
+        routes = optimizer.optimize_routes(
+            tuple(start_coords), 
+            tuple(end_coords),
+            user_preferences,
+            user_vehicle_data
+        )
+        
+        # Get personalized recommendations
+        recommendations = optimizer.get_personalized_recommendations(routes, user_history)
+        
+        return jsonify({
+            'success': True,
+            'routes': routes,
+            'recommendations': recommendations
+        })
+        
+    except Exception as e:
+        logging.error(f"Route optimization error: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)})
 
 
 if __name__ == "__main__":

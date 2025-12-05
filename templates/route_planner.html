@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Route Planner - FleetTrack</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='route_planner.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-car-side logo-icon"></i>
+                    <span>FleetTrack</span>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="route-planner-container">
+        <div class="planner-header">
+            <h1><i class="fas fa-route"></i> Smart Route Planner</h1>
+            <p class="planner-subtitle">AI-powered route optimization with real-time traffic and fuel efficiency analysis</p>
+        </div>
+
+        <div class="planner-content">
+            <!-- Route Input Section -->
+            <div class="route-input-section">
+                <div class="input-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-map-marker-alt"></i> Plan Your Route</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="routeForm">
+                            <div class="input-group">
+                                <div class="input-field">
+                                    <label for="startLocation">
+                                        <i class="fas fa-play-circle start-icon"></i>
+                                        Starting Point
+                                    </label>
+                                    <input type="text" id="startLocation" placeholder="Enter starting location" required>
+                                    <button type="button" class="gps-btn" id="useCurrentLocation">
+                                        <i class="fas fa-crosshairs"></i>
+                                    </button>
+                                </div>
+                                <div class="route-swap">
+                                    <button type="button" id="swapLocations" class="swap-btn">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </button>
+                                </div>
+                                <div class="input-field">
+                                    <label for="endLocation">
+                                        <i class="fas fa-flag-checkered end-icon"></i>
+                                        Destination
+                                    </label>
+                                    <input type="text" id="endLocation" placeholder="Enter destination" required>
+                                </div>
+                            </div>
+                            
+                            <div class="preferences-section">
+                                <h4><i class="fas fa-sliders-h"></i> Route Preferences</h4>
+                                <div class="preference-options">
+                                    <label class="preference-option">
+                                        <input type="radio" name="priority" value="balanced" checked>
+                                        <span class="option-content">
+                                            <i class="fas fa-balance-scale"></i>
+                                            <div>
+                                                <strong>Balanced</strong>
+                                                <small>Optimal mix of time and fuel efficiency</small>
+                                            </div>
+                                        </span>
+                                    </label>
+                                    <label class="preference-option">
+                                        <input type="radio" name="priority" value="fuel">
+                                        <span class="option-content">
+                                            <i class="fas fa-leaf"></i>
+                                            <div>
+                                                <strong>Fuel Efficient</strong>
+                                                <small>Minimize fuel consumption and costs</small>
+                                            </div>
+                                        </span>
+                                    </label>
+                                    <label class="preference-option">
+                                        <input type="radio" name="priority" value="time">
+                                        <span class="option-content">
+                                            <i class="fas fa-clock"></i>
+                                            <div>
+                                                <strong>Fastest</strong>
+                                                <small>Minimize travel time</small>
+                                            </div>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="plan-route-btn" id="planRouteBtn">
+                                <i class="fas fa-route"></i>
+                                Find Optimal Routes
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Section -->
+            <div class="map-section">
+                <div class="map-card">
+                    <div class="map-header">
+                        <h3><i class="fas fa-map"></i> Route Visualization</h3>
+
+                    </div>
+                    <div id="routeMap" class="route-map"></div>
+                </div>
+            </div>
+
+            <!-- Route Options Section -->
+            <div class="route-options-section" id="routeOptionsSection" style="display: none;">
+                <div class="section-header">
+                    <h3><i class="fas fa-list-alt"></i> Route Options</h3>
+
+                </div>
+                <div class="route-cards" id="routeCards">
+                    <!-- Route cards will be dynamically generated here -->
+                </div>
+            </div>
+
+            <!-- Recommendations Section -->
+            <div class="recommendations-section" id="recommendationsSection" style="display: none;">
+                <div class="recommendations-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-lightbulb"></i> Personalized Recommendations</h3>
+                    </div>
+                    <div class="card-body" id="recommendationsContent">
+                        <!-- Recommendations will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal loading-modal">
+        <div class="modal-content loading-content">
+            <div class="loading-spinner">
+                <i class="fas fa-route fa-spin"></i>
+            </div>
+            <h3>Optimizing Routes</h3>
+            <p>Analyzing traffic patterns and calculating fuel-efficient paths...</p>
+            <div class="loading-progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let map;
+        let routeData = [];
+        let startMarker, endMarker;
+        let routeLines = [];
+
+        // Initialize map
+        function initializeMap() {
+            map = L.map('routeMap').setView([40.7128, -74.0060], 10);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: ''
+            }).addTo(map);
+        }
+
+        // Geocode location using Nominatim API
+        async function geocodeLocation(locationName) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName)}&limit=1`);
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    return {
+                        lat: parseFloat(data[0].lat),
+                        lon: parseFloat(data[0].lon),
+                        display_name: data[0].display_name
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('Geocoding error:', error);
+                return null;
+            }
+        }
+
+        // Update map with route
+        function updateMapWithRoute(startCoords, endCoords, routes) {
+            // Clear existing markers and routes
+            if (startMarker) map.removeLayer(startMarker);
+            if (endMarker) map.removeLayer(endMarker);
+            routeLines.forEach(line => map.removeLayer(line));
+            routeLines = [];
+
+            // Add start marker
+            startMarker = L.circleMarker([startCoords.lat, startCoords.lon], {
+                color: '#22c55e',
+                fillColor: '#22c55e',
+                fillOpacity: 0.8,
+                radius: 8
+            }).addTo(map);
+            startMarker.bindPopup(`<b>Start:</b> ${startCoords.display_name || 'Starting Point'}`);
+
+            // Add end marker
+            endMarker = L.circleMarker([endCoords.lat, endCoords.lon], {
+                color: '#ef4444',
+                fillColor: '#ef4444',
+                fillOpacity: 0.8,
+                radius: 8
+            }).addTo(map);
+            endMarker.bindPopup(`<b>Destination:</b> ${endCoords.display_name || 'Destination'}`);
+
+            // Add route lines (simplified - in production, use routing service)
+            routes.forEach((route, index) => {
+                const routeLine = L.polyline([
+                    [startCoords.lat, startCoords.lon],
+                    [endCoords.lat, endCoords.lon]
+                ], {
+                    color: getRouteColor(route.type),
+                    weight: 4,
+                    opacity: 0.7,
+                    dashArray: route.type === 'eco' ? '10, 10' : null
+                }).addTo(map);
+                
+                routeLine.bindPopup(`<b>${route.name}</b><br>Distance: ${route.distance_km} km<br>Time: ${route.travel_time_minutes} min`);
+                routeLines.push(routeLine);
+            });
+
+            // Fit map to show both points
+            const group = new L.featureGroup([startMarker, endMarker]);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+
+        function getRouteColor(routeType) {
+            const colors = {
+                'direct': '#3b82f6',
+                'eco': '#22c55e',
+                'fastest': '#f59e0b'
+            };
+            return colors[routeType] || '#6b7280';
+        }
+
+        // Generate route cards
+        function generateRouteCards(routes) {
+            const routeCards = document.getElementById('routeCards');
+            routeCards.innerHTML = '';
+
+            routes.forEach((route, index) => {
+                const card = document.createElement('div');
+                card.className = `route-card ${route.type === 'eco' ? 'recommended' : ''}`;
+                card.innerHTML = `
+                    <div class="route-card-header">
+                        <div class="route-title">
+                            <i class="fas ${getRouteIcon(route.type)}"></i>
+                            <h4>${route.name}</h4>
+                            ${route.type === 'eco' ? '<span class="recommended-badge">Recommended</span>' : ''}
+                        </div>
+                        <div class="efficiency-score">
+                            <div class="score-circle" style="--score: ${route.efficiency_score}">
+                                <span>${route.efficiency_score}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="route-description">
+                        ${route.description}
+                    </div>
+                    <div class="route-metrics">
+                        <div class="metric">
+                            <i class="fas fa-road"></i>
+                            <span class="metric-value">${route.distance_km} km</span>
+                            <span class="metric-label">Distance</span>
+                        </div>
+                        <div class="metric">
+                            <i class="fas fa-clock"></i>
+                            <span class="metric-value">${route.travel_time_minutes} min</span>
+                            <span class="metric-label">Time</span>
+                        </div>
+                        <div class="metric">
+                            <i class="fas fa-gas-pump"></i>
+                            <span class="metric-value">${route.fuel_consumption} L</span>
+                            <span class="metric-label">Fuel</span>
+                        </div>
+                        <div class="metric">
+                            <i class="fas fa-rupee-sign"></i>
+                            <span class="metric-value">₹${route.fuel_cost}</span>
+                            <span class="metric-label">Cost</span>
+                        </div>
+                    </div>
+                    <div class="traffic-info">
+                        <div class="traffic-level ${route.traffic_info.level}">
+                            <i class="fas fa-traffic-light"></i>
+                            <span>Traffic: ${route.traffic_info.level}</span>
+                        </div>
+                        ${route.traffic_info.estimated_delay_minutes > 0 ? 
+                            `<div class="delay-info">+${route.traffic_info.estimated_delay_minutes} min delay</div>` : 
+                            '<div class="delay-info no-delay">No delays expected</div>'
+                        }
+                    </div>
+                    <div class="route-highlights">
+                        ${route.route_highlights.map(highlight => `<span class="highlight-tag">${highlight}</span>`).join('')}
+                    </div>
+                    <div class="route-actions">
+                        <button class="select-route-btn" onclick="selectRoute(${index})">
+                            <i class="fas fa-check"></i> Select Route
+                        </button>
+                        <button class="save-route-btn" onclick="saveRoute(${index})">
+                            <i class="fas fa-bookmark"></i> Save
+                        </button>
+                    </div>
+                `;
+                routeCards.appendChild(card);
+            });
+        }
+
+        function getRouteIcon(routeType) {
+            const icons = {
+                'direct': 'fa-route',
+                'eco': 'fa-leaf',
+                'fastest': 'fa-tachometer-alt'
+            };
+            return icons[routeType] || 'fa-route';
+        }
+
+        // Handle form submission
+        document.getElementById('routeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const startLocation = document.getElementById('startLocation').value;
+            const endLocation = document.getElementById('endLocation').value;
+            const priority = document.querySelector('input[name="priority"]:checked').value;
+            
+            if (!startLocation || !endLocation) {
+                alert('Please enter both starting point and destination');
+                return;
+            }
+
+            // Show loading modal
+            showLoadingModal();
+            
+            try {
+                // Geocode locations
+                const startCoords = await geocodeLocation(startLocation);
+                const endCoords = await geocodeLocation(endLocation);
+                
+                if (!startCoords || !endCoords) {
+                    alert('Could not find one or both locations. Please check your input.');
+                    hideLoadingModal();
+                    return;
+                }
+
+                // Get route optimization
+                const response = await fetch('/api/route-optimize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        start_coords: [startCoords.lat, startCoords.lon],
+                        end_coords: [endCoords.lat, endCoords.lon],
+                        priority: priority
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    routeData = data.routes;
+                    
+                    // Update map
+                    updateMapWithRoute(startCoords, endCoords, data.routes);
+                    
+                    // Generate route cards
+                    generateRouteCards(data.routes);
+                    
+                    // Show recommendations
+                    showRecommendations(data.recommendations);
+                    
+                    // Show sections
+                    document.getElementById('routeOptionsSection').style.display = 'block';
+                    document.getElementById('recommendationsSection').style.display = 'block';
+                } else {
+                    alert('Error optimizing routes: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while planning the route');
+            } finally {
+                hideLoadingModal();
+            }
+        });
+
+        function showLoadingModal() {
+            document.getElementById('loadingModal').style.display = 'flex';
+            // Simulate progress
+            let progress = 0;
+            const progressBar = document.getElementById('progressBar');
+            const interval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                }
+                progressBar.style.width = progress + '%';
+            }, 200);
+        }
+
+        function hideLoadingModal() {
+            document.getElementById('loadingModal').style.display = 'none';
+            document.getElementById('progressBar').style.width = '0%';
+        }
+
+        function showRecommendations(recommendations) {
+            const content = document.getElementById('recommendationsContent');
+            content.innerHTML = `
+                <div class="recommendation-primary">
+                    <h4><i class="fas fa-star"></i> Our Recommendation</h4>
+                    <p><strong>${recommendations.primary_recommendation.name}</strong></p>
+                    <ul>
+                        ${recommendations.reasons.map(reason => `<li>${reason}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="recommendation-tips">
+                    <h4><i class="fas fa-lightbulb"></i> Driving Tips</h4>
+                    <ul>
+                        ${recommendations.tips.map(tip => `<li>${tip}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        function showSavingsAnalysis(savings) {
+            const grid = document.getElementById('savingsGrid');
+            grid.innerHTML = `
+                <div class="savings-item">
+                    <i class="fas fa-gas-pump"></i>
+                    <div class="savings-content">
+                        <h4>Fuel Savings</h4>
+                        <p class="savings-value">₹${savings.potential_fuel_savings}</p>
+                        <p class="savings-desc">Per trip</p>
+                    </div>
+                </div>
+                <div class="savings-item">
+                    <i class="fas fa-calendar-month"></i>
+                    <div class="savings-content">
+                        <h4>Monthly Savings</h4>
+                        <p class="savings-value">₹${savings.monthly_savings_estimate}</p>
+                        <p class="savings-desc">Estimated</p>
+                    </div>
+                </div>
+                <div class="savings-item">
+                    <i class="fas fa-clock"></i>
+                    <div class="savings-content">
+                        <h4>Time Difference</h4>
+                        <p class="savings-value">${Math.abs(savings.time_difference_minutes)} min</p>
+                        <p class="savings-desc">${savings.time_difference_minutes >= 0 ? 'Saved' : 'Added'}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateSavingsForRoute(selectedIndex) {
+            if (!routeData || routeData.length === 0) return;
+            
+            const selectedRoute = routeData[selectedIndex];
+            const ecoRoute = routeData.find(r => r.type === 'eco') || routeData[0];
+            
+            const costDiff = selectedRoute.fuel_cost - ecoRoute.fuel_cost;
+            const timeDiff = selectedRoute.travel_time_minutes - ecoRoute.travel_time_minutes;
+            
+            const savings = {
+                potential_fuel_savings: Math.abs(costDiff).toFixed(2),
+                monthly_savings_estimate: (Math.abs(costDiff) * 20).toFixed(2),
+                time_difference_minutes: Math.round(timeDiff)
+            };
+            
+            showSavingsAnalysis(savings);
+        }
+
+        function updateTrafficStatus(trafficInfo) {
+            const status = document.getElementById('trafficStatus');
+            status.innerHTML = `
+                <i class="fas fa-traffic-light"></i>
+                <span>Traffic: ${trafficInfo.level} - ${trafficInfo.estimated_delay_minutes} min delay</span>
+            `;
+            status.className = `traffic-status ${trafficInfo.level}`;
+        }
+
+        // Utility functions
+        function selectRoute(index) {
+            // Remove previous selection and recommended
+            document.querySelectorAll('.route-card').forEach(card => {
+                card.classList.remove('selected', 'recommended');
+            });
+            
+            // Add selection to clicked card
+            document.querySelectorAll('.route-card')[index].classList.add('selected');
+        }
+
+        async function saveRoute(index) {
+            try {
+                const route = routeData[index];
+                const startLocation = document.getElementById('startLocation').value;
+                const endLocation = document.getElementById('endLocation').value;
+                
+                const response = await fetch('/api/save-route', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        route: route,
+                        start_location: startLocation,
+                        end_location: endLocation
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`Route saved successfully: ${route.name}`);
+                } else {
+                    alert('Error saving route: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while saving the route');
+            }
+        }
+
+        // Swap locations
+        document.getElementById('swapLocations').addEventListener('click', function() {
+            const start = document.getElementById('startLocation');
+            const end = document.getElementById('endLocation');
+            const temp = start.value;
+            start.value = end.value;
+            end.value = temp;
+        });
+
+        // Use current location
+        document.getElementById('useCurrentLocation').addEventListener('click', async function() {
+            if (navigator.geolocation) {
+                // Request permission explicitly
+                try {
+                    const permission = await navigator.permissions.query({name: 'geolocation'});
+                    if (permission.state === 'denied') {
+                        alert('Location access denied. Please enable location permissions in your browser settings.');
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Permission API not supported');
+                }
+                
+                navigator.geolocation.getCurrentPosition(async function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    try {
+                        // Reverse geocode to get location name
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                        const data = await response.json();
+                        
+                        if (data && data.display_name) {
+                            document.getElementById('startLocation').value = data.display_name;
+                        } else {
+                            document.getElementById('startLocation').value = `${lat}, ${lon}`;
+                        }
+                    } catch (error) {
+                        console.error('Reverse geocoding failed:', error);
+                        document.getElementById('startLocation').value = `${lat}, ${lon}`;
+                    }
+                });
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        });
+
+        // Initialize map when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+        });
+    </script>
+</body>
+</html>
