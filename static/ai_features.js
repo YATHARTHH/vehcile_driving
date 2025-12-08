@@ -777,7 +777,7 @@ function showFuelDemo() {
                                 <h6>Eco Driving</h6>
                             </div>
                             <div class="fuel-amount">3.2 L</div>
-                            <div class="fuel-cost">$4.80</div>
+                            <div class="fuel-cost">₹432.00</div>
                             <div class="scenario-details">
                                 <div class="detail-item">
                                     <span>Avg Speed: 55 km/h</span>
@@ -786,7 +786,7 @@ function showFuelDemo() {
                                     <span>ETA: +8 minutes</span>
                                 </div>
                                 <div class="detail-item savings">
-                                    <span>Savings: $1.20</span>
+                                    <span>Savings: ₹108.00</span>
                                 </div>
                             </div>
                         </div>
@@ -797,7 +797,7 @@ function showFuelDemo() {
                                 <h6>Normal Driving</h6>
                             </div>
                             <div class="fuel-amount">4.0 L</div>
-                            <div class="fuel-cost">$6.00</div>
+                            <div class="fuel-cost">₹540.00</div>
                             <div class="scenario-details">
                                 <div class="detail-item">
                                     <span>Avg Speed: 65 km/h</span>
@@ -817,7 +817,7 @@ function showFuelDemo() {
                                 <h6>Aggressive Driving</h6>
                             </div>
                             <div class="fuel-amount">5.1 L</div>
-                            <div class="fuel-cost">$7.65</div>
+                            <div class="fuel-cost">₹688.50</div>
                             <div class="scenario-details">
                                 <div class="detail-item">
                                     <span>Avg Speed: 75 km/h</span>
@@ -826,7 +826,7 @@ function showFuelDemo() {
                                     <span>ETA: -5 minutes</span>
                                 </div>
                                 <div class="detail-item cost">
-                                    <span>Extra Cost: $1.65</span>
+                                    <span>Extra Cost: ₹148.50</span>
                                 </div>
                             </div>
                         </div>
@@ -837,7 +837,7 @@ function showFuelDemo() {
                     <h5>AI Recommendations:</h5>
                     <div class="insight-item">
                         <i class="fas fa-lightbulb"></i>
-                        <span>Choose eco driving to save $1.20 on this trip</span>
+                        <span>Choose eco driving to save ₹108.00 on this trip</span>
                     </div>
                     <div class="insight-item">
                         <i class="fas fa-clock"></i>
