@@ -41,42 +41,67 @@ function showSentimentDemo() {
                 border-radius: 12px;
                 padding: 1.5rem;
                 display: flex;
-                align-items: center;
+                align-items: flex-start;
                 margin-bottom: 1rem;
+                min-height: auto;
+                flex-wrap: wrap;
             }
             .sentiment-icon { 
                 font-size: 2rem;
                 color: #28a745;
                 margin-right: 1rem;
+                flex-shrink: 0;
+                margin-top: 0.2rem;
+            }
+            .sentiment-info {
+                flex: 1;
+                min-width: 200px;
             }
             .sentiment-info h5 { 
                 color: #155724;
                 margin-bottom: 0.5rem;
+                margin-top: 0;
             }
             .sentiment-details { 
                 display: flex;
                 gap: 0.5rem;
                 flex-wrap: wrap;
-                margin-top: 0.5rem;
+                margin-top: 0.8rem;
             }
             .tag { 
                 background: #28a745;
                 color: white;
-                padding: 0.2rem 0.5rem;
+                padding: 0.3rem 0.6rem;
                 border-radius: 15px;
                 font-size: 0.8rem;
+                white-space: nowrap;
+            }
+            .analysis-insights {
+                margin-top: 1rem;
             }
             .analysis-insights ul { 
                 list-style: none;
                 padding-left: 0;
+                margin: 0;
             }
             .analysis-insights li { 
-                padding: 0.3rem 0;
+                padding: 0.4rem 0;
                 color: #555;
+                line-height: 1.4;
             }
             .analysis-insights li::before { 
                 content: '🧠';
                 margin-right: 0.5rem;
+            }
+            @media (max-width: 600px) {
+                .sentiment-card {
+                    flex-direction: column;
+                    text-align: center;
+                }
+                .sentiment-icon {
+                    margin-right: 0;
+                    margin-bottom: 1rem;
+                }
             }
         </style>
     `;
@@ -943,14 +968,17 @@ function startLiveDemo() {
 
 // Modal functions
 function closeModal() {
-    document.getElementById('demoModal').style.display = 'none';
+    const modal = document.getElementById('demoModal');
+    const modalBody = document.getElementById('modalBody');
+    modal.style.display = 'none';
+    modalBody.innerHTML = ''; // Clear content to remove inline styles
 }
 
 // Close modal when clicking outside
 window.onclick = function(event) {
     const modal = document.getElementById('demoModal');
     if (event.target === modal) {
-        modal.style.display = 'none';
+        closeModal();
     }
 }
 
