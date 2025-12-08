@@ -308,39 +308,201 @@ def trip_detail(trip_id):
 @app.route("/chatbot", methods=["POST"])
 @login_required
 def chatbot():
-    message = request.json.get('message', '').strip()
+    data = request.get_json()
+    message = data.get('message', '').strip()
+    conversation_id = data.get('conversation_id', '')
+    
     if not message:
-        return {'response': 'Please enter a message.'}
+        return jsonify({'response': 'Please enter a message.', 'suggestions': []})
     
     # Get user's recent trip data for context
     conn = get_db_connection()
     cur = conn.cursor()
+    
+    # Enhanced trip data query
     cur.execute('''
-        SELECT distance_km, avg_speed_kmph, max_rpm, fuel_consumed, brake_events
-        FROM trips WHERE user_id = ? ORDER BY trip_date DESC LIMIT 5
+        SELECT distance_km, avg_speed_kmph, max_rpm, fuel_consumed, brake_events,
+               trip_date, max_speed, steering_angle, acceleration, gear_position,
+               tire_pressure, engine_load, throttle_position, brake_pressure
+        FROM trips WHERE user_id = ? ORDER BY trip_date DESC LIMIT 10
     ''', (session['user_id'],))
     rows = cur.fetchall()
     recent_trips = [dict(zip([col[0] for col in cur.description], row)) for row in rows]
+    
+    # Get user vehicle info
+    cur.execute('SELECT vehicle_number FROM users WHERE id = ?', (session['user_id'],))
+    user_info = cur.fetchone()
+    vehicle_number = user_info['vehicle_number'] if user_info else 'Unknown'
+    
     conn.close()
     
-    user_data = {'recent_trips': recent_trips}
+    # Enhanced user data
+    user_data = {
+        'recent_trips': recent_trips,
+        'vehicle_number': vehicle_number,
+        'user_id': session['user_id']
+    }
+    
+    # Initialize chatbot with session management
+    if 'chatbot_instance' not in session or session.get('conversation_id') != conversation_id:
+        session['chatbot_instance'] = True
+        session['conversation_id'] = conversation_id
+    
     chatbot_instance = VehicleChatbot()
     response = chatbot_instance.get_response(message, user_data)
     
-    return jsonify({'response': response})
+    # Generate contextual suggestions with NLP enhancement
+    suggestions = generate_suggestions_enhanced(message, user_data, chatbot_instance)
+    
+    # Get NLP insights for debugging (optional)
+    nlp_insights = chatbot_instance.get_nlp_insights(message)
+    
+    return jsonify({
+        'response': response,
+        'suggestions': suggestions,
+        'conversation_id': conversation_id,
+        'nlp_insights': nlp_insights if data.get('debug') else None
+    })
 
+
+def generate_suggestions_enhanced(message, user_data, chatbot_instance):
+    """Generate enhanced contextual suggestions using NLP"""
+    suggestions = []
+    
+    # Get NLP insights
+    try:
+        nlp_insights = chatbot_instance.get_nlp_insights(message)
+        
+        # Use entities and keywords for better suggestions
+        if nlp_insights and 'entities' in nlp_insights:
+            entities = nlp_insights['entities']
+            keywords = nlp_insights.get('keywords', [])
+            
+            # Entity-based suggestions
+            if 'speed' in entities:
+                suggestions.extend([
+                    "Optimize my speed for better efficiency",
+                    "What's the ideal speed range?"
+                ])
+            
+            if 'fuel' in entities:
+                suggestions.extend([
+                    "Calculate my fuel savings potential",
+                    "Compare my fuel efficiency"
+                ])
+            
+            # Keyword-based suggestions
+            if 'maintenance' in keywords:
+                suggestions.extend([
+                    "Create maintenance schedule",
+                    "Check vehicle health status"
+                ])
+            
+            if 'safety' in keywords:
+                suggestions.extend([
+                    "Emergency driving tips",
+                    "Weather safety advice"
+                ])
+        
+        # Sentiment-based suggestions
+        if nlp_insights and 'sentiment' in nlp_insights:
+            sentiment = nlp_insights['sentiment'].get('final', 'neutral')
+            if sentiment == 'negative':
+                suggestions.append("How can I solve this issue?")
+            elif sentiment == 'positive':
+                suggestions.append("Show me advanced tips")
+    
+    except Exception:
+        pass  # Fallback to original logic
+    
+    # Fallback to original suggestion logic if no NLP suggestions
+    if not suggestions:
+        suggestions = generate_suggestions(message, user_data)
+    
+    return suggestions[:3]  # Limit to 3 suggestions
+
+def generate_suggestions(message, user_data):
+    """Generate contextual follow-up suggestions (original logic)"""
+    message_lower = message.lower()
+    suggestions = []
+    
+    if any(word in message_lower for word in ['fuel', 'efficiency', 'gas']):
+        suggestions = [
+            "What's my current fuel efficiency?",
+            "How can I reduce fuel costs?",
+            "Show me eco-driving tips"
+        ]
+    elif any(word in message_lower for word in ['trip', 'analyze', 'performance']):
+        suggestions = [
+            "Compare my recent trips",
+            "What's my driving score?",
+            "Show weekly summary"
+        ]
+    elif any(word in message_lower for word in ['maintenance', 'service', 'repair']):
+        suggestions = [
+            "When is my next service due?",
+            "Check for maintenance alerts",
+            "Show maintenance schedule"
+        ]
+    elif any(word in message_lower for word in ['safety', 'tips', 'advice']):
+        suggestions = [
+            "Weather driving tips",
+            "Highway safety advice",
+            "Emergency preparedness"
+        ]
+    else:
+        # Default suggestions based on user data
+        if user_data.get('recent_trips'):
+            suggestions = [
+                "Analyze my driving patterns",
+                "How can I improve?",
+                "Show me cost savings tips"
+            ]
+        else:
+            suggestions = [
+                "What can you help me with?",
+                "Give me driving tips",
+                "How do I save fuel?"
+            ]
+    
+    return suggestions[:3]  # Limit to 3 suggestions
 
 @app.route("/chatbot/suggestions")
 @login_required
 def chatbot_suggestions():
-    suggestions = [
-        "How can I improve my fuel efficiency?",
-        "Analyze my recent trips",
-        "Give me driving tips",
-        "What's my driving score?",
-        "Show me maintenance advice"
-    ]
+    # Get user context for personalized suggestions
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT COUNT(*) as trip_count FROM trips WHERE user_id = ?', (session['user_id'],))
+    trip_count = cur.fetchone()['trip_count']
+    conn.close()
+    
+    if trip_count > 0:
+        suggestions = [
+            "Analyze my recent trips",
+            "How can I improve my fuel efficiency?",
+            "What's my driving score?",
+            "Show me cost savings tips",
+            "Give me maintenance advice"
+        ]
+    else:
+        suggestions = [
+            "What can you help me with?",
+            "Give me driving tips",
+            "How do I save fuel?",
+            "Tell me about safety features",
+            "Show maintenance schedule"
+        ]
+    
     return jsonify({'suggestions': suggestions})
+
+@app.route("/chatbot/clear", methods=["POST"])
+@login_required
+def clear_chatbot_session():
+    """Clear chatbot session data"""
+    session.pop('chatbot_instance', None)
+    session.pop('conversation_id', None)
+    return jsonify({'success': True})
 
 
 @app.route("/alerts")

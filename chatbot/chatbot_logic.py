@@ -1,10 +1,29 @@
 import re
 import random
 from datetime import datetime, timedelta
+from typing import Dict, List, Any, Optional
+try:
+    from .nlp_engine import NLPEngine
+    NLP_AVAILABLE = True
+except ImportError:
+    NLP_AVAILABLE = False
+    NLPEngine = None
 
 class VehicleChatbot:
     def __init__(self):
         self.session_memory = {}
+        self.conversation_history = []
+        self.user_context = {}
+        
+        # Initialize NLP engine if available
+        self.nlp_engine = None
+        if NLP_AVAILABLE:
+            try:
+                self.nlp_engine = NLPEngine()
+                print("✅ Advanced NLP engine loaded")
+            except Exception as e:
+                print(f"⚠️ NLP engine failed to load: {e}")
+                self.nlp_engine = None
         self.responses = {
             'greeting': [
                 "Hello! I'm your vehicle assistant. How can I help you today?",
@@ -40,53 +59,239 @@ class VehicleChatbot:
         }
         
         self.patterns = {
-            'greeting': [r'\b(hi|hello|hey|good morning|good afternoon|good evening)\b'],
-            'driving_tips': [r'\b(driving tips|drive better|improve driving|safe driving|how to drive)\b'],
-            'fuel_efficiency': [r'\b(fuel|efficiency|mpg|gas|consumption|save fuel|mileage|economy)\b'],
-            'maintenance': [r'\b(maintenance|service|oil change|tire|brake|check|repair|schedule)\b'],
-            'trip_data': [r'\b(trip|data|distance|speed|rpm|analysis|analyze|performance|stats)\b'],
-            'safety': [r'\b(safety|safe|accident|crash|seatbelt|emergency)\b']
+            'greeting': [r'\b(hi|hello|hey|good morning|good afternoon|good evening|greetings)\b'],
+            'driving_tips': [r'\b(driving tips|drive better|improve driving|safe driving|how to drive|driving advice)\b'],
+            'fuel_efficiency': [r'\b(fuel|efficiency|mpg|gas|consumption|save fuel|mileage|economy|eco.?driving)\b'],
+            'maintenance': [r'\b(maintenance|service|oil change|tire|brake|check|repair|schedule|servicing)\b'],
+            'trip_data': [r'\b(trip|data|distance|speed|rpm|analysis|analyze|performance|stats|metrics)\b'],
+            'safety': [r'\b(safety|safe|accident|crash|seatbelt|emergency|hazard)\b'],
+            'weather': [r'\b(weather|rain|snow|fog|storm|winter|summer|conditions)\b'],
+            'route': [r'\b(route|navigation|directions|path|way|road)\b'],
+            'cost': [r'\b(cost|money|expensive|cheap|budget|price|save)\b']
+        }
+        
+        self.intent_keywords = {
+            'question': ['what', 'how', 'why', 'when', 'where', 'which', 'who'],
+            'request': ['can you', 'could you', 'please', 'help me', 'show me'],
+            'comparison': ['vs', 'versus', 'compare', 'better', 'worse', 'difference'],
+            'improvement': ['improve', 'better', 'optimize', 'enhance', 'increase']
         }
 
-    def get_response(self, message, user_data=None):
-        message = message.lower().strip()
+    def get_response(self, message: str, user_data: Optional[Dict] = None) -> str:
+        original_message = message
+        message_lower = message.lower().strip()
         
-        # Check for patterns
+        # Store conversation history
+        self.conversation_history.append({'user': original_message, 'timestamp': datetime.now()})
+        
+        # Update user context
+        if user_data:
+            self.user_context.update(user_data)
+        
+        # Advanced NLP analysis if available
+        nlp_analysis = None
+        response_strategy = None
+        if self.nlp_engine:
+            try:
+                nlp_analysis = self.nlp_engine.analyze_message(original_message)
+                response_strategy = self.nlp_engine.get_response_strategy(nlp_analysis)
+            except Exception as e:
+                print(f"NLP analysis failed: {e}")
+        
+        # Detect intent (enhanced with NLP if available)
+        intent = self._detect_intent_enhanced(message_lower, nlp_analysis)
+        
+        # Check for patterns with priority
+        response = self._pattern_matching_enhanced(message_lower, user_data, intent, nlp_analysis)
+        if response:
+            # Enhance response with NLP insights
+            if self.nlp_engine and nlp_analysis and response_strategy:
+                response = self.nlp_engine.enhance_response(response, nlp_analysis, response_strategy)
+            self._add_to_history('bot', response)
+            return response
+        
+        # Contextual responses based on conversation history
+        context_response = self._contextual_response(message_lower, user_data)
+        if context_response:
+            if self.nlp_engine and nlp_analysis and response_strategy:
+                context_response = self.nlp_engine.enhance_response(context_response, nlp_analysis, response_strategy)
+            self._add_to_history('bot', context_response)
+            return context_response
+        
+        # Default intelligent response
+        default_response = self._intelligent_default(message_lower, user_data, nlp_analysis)
+        if self.nlp_engine and nlp_analysis and response_strategy:
+            default_response = self.nlp_engine.enhance_response(default_response, nlp_analysis, response_strategy)
+        self._add_to_history('bot', default_response)
+        return default_response
+    
+    def _detect_intent(self, message: str) -> str:
+        """Detect user intent from message"""
+        for intent, keywords in self.intent_keywords.items():
+            if any(keyword in message for keyword in keywords):
+                return intent
+        return 'statement'
+    
+    def _detect_intent_enhanced(self, message: str, nlp_analysis: Optional[Dict] = None) -> str:
+        """Enhanced intent detection using NLP analysis"""
+        if nlp_analysis and nlp_analysis.get('intent'):
+            primary_intent = nlp_analysis['intent']['primary']
+            confidence = nlp_analysis['intent']['confidence']
+            
+            # Use NLP intent if confidence is high
+            if confidence > 0.6:
+                return primary_intent
+        
+        # Fallback to rule-based detection
+        return self._detect_intent(message)
+    
+    def _pattern_matching_enhanced(self, message: str, user_data: Optional[Dict], intent: str, nlp_analysis: Optional[Dict] = None) -> Optional[str]:
+        """Enhanced pattern matching with NLP insights"""
+        # Use entities from NLP analysis for better matching
+        if nlp_analysis and nlp_analysis.get('entities'):
+            entities = nlp_analysis['entities']
+            
+            # Handle specific entity-based responses
+            if 'speed' in entities:
+                speed_values = entities['speed']
+                return f"🚗 I see you mentioned {speed_values[0]} speed. Here's what I recommend for optimal efficiency at that speed:\n\n" + self._speed_specific_advice(speed_values[0])
+            
+            if 'fuel' in entities:
+                fuel_values = entities['fuel']
+                return f"⛽ Regarding {fuel_values[0]} fuel consumption, here are personalized tips:\n\n" + self._fuel_specific_advice(fuel_values[0], user_data)
+        
+        # Fallback to original pattern matching
+        return self._pattern_matching(message, user_data, intent)
+    
+    def _pattern_matching(self, message: str, user_data: Optional[Dict], intent: str) -> Optional[str]:
+        """Enhanced pattern matching with context"""
         for category, patterns in self.patterns.items():
             for pattern in patterns:
                 if re.search(pattern, message, re.IGNORECASE):
                     if category == 'trip_data' and user_data:
                         return self._analyze_trip_data(user_data)
+                    elif category == 'weather':
+                        return self._weather_driving_advice()
+                    elif category == 'route':
+                        return self._route_advice()
+                    elif category == 'cost':
+                        return self._cost_saving_tips(user_data)
                     elif category in self.responses:
-                        return random.choice(self.responses[category])
+                        return self._contextual_response_selection(category, intent, user_data)
         
-        # Specific questions and keywords
-        if any(word in message for word in ['score', 'performance', 'rating']):
-            return self._performance_advice(user_data)
-        elif any(word in message for word in ['alert', 'warning', 'problem']):
-            return "⚠️ Check your dashboard for maintenance alerts. Common issues:\n• Low tire pressure\n• Engine temperature\n• Brake wear\n• Oil change due\n\nRegular monitoring prevents major problems!"
-        elif any(word in message for word in ['thank', 'thanks']):
-            return random.choice(["You're welcome! Drive safely! 🚗", "Happy to help! Stay safe on the roads!", "Anytime! Feel free to ask more questions."])
-        elif any(word in message for word in ['help', 'what can you do']):
-            return self._show_capabilities()
-        elif any(word in message for word in ['rpm', 'revolutions']):
-            return self._rpm_advice(user_data)
-        elif any(word in message for word in ['acceleration', 'accelerate']):
-            return "🚀 Acceleration tips:\n• Gradual acceleration saves fuel\n• Avoid flooring the gas pedal\n• Shift gears smoothly (manual)\n• Use eco-mode if available\n• Anticipate traffic to avoid unnecessary acceleration"
-        elif 'how' in message and any(word in message for word in ['improve', 'better']):
+        # Specific keyword handling
+        return self._handle_specific_keywords(message, user_data)
+    
+    def _contextual_response_selection(self, category: str, intent: str, user_data: Optional[Dict]) -> str:
+        """Select response based on context and intent"""
+        responses = self.responses[category]
+        
+        # Personalize based on user data
+        if user_data and user_data.get('recent_trips'):
+            if category == 'fuel_efficiency':
+                return self._personalized_fuel_advice(user_data)
+            elif category == 'driving_tips':
+                return self._personalized_driving_tips(user_data)
+        
+        return random.choice(responses)
+    
+    def _handle_specific_keywords(self, message: str, user_data: Optional[Dict]) -> Optional[str]:
+        """Handle specific keywords and phrases"""
+        keyword_handlers = {
+            ('score', 'performance', 'rating'): lambda: self._performance_advice(user_data),
+            ('alert', 'warning', 'problem'): lambda: self._alert_advice(),
+            ('thank', 'thanks'): lambda: self._gratitude_response(),
+            ('help', 'what can you do'): lambda: self._show_capabilities(),
+            ('rpm', 'revolutions'): lambda: self._rpm_advice(user_data),
+            ('acceleration', 'accelerate'): lambda: self._acceleration_advice(),
+            ('vehicle', 'car', 'my car'): lambda: self._vehicle_info(user_data),
+            ('compare', 'comparison', 'vs'): lambda: self._comparison_analysis(user_data),
+            ('week', 'weekly', 'summary'): lambda: self._weekly_summary(user_data),
+            ('streak', 'consistent', 'progress'): lambda: self._streak_analysis(user_data)
+        }
+        
+        for keywords, handler in keyword_handlers.items():
+            if any(word in message for word in keywords):
+                return handler()
+        
+        if 'how' in message and any(word in message for word in ['improve', 'better']):
             return self._improvement_suggestions(user_data)
-        elif any(word in message for word in ['vehicle', 'car', 'my car']):
-            return self._vehicle_info(user_data)
-        elif any(word in message for word in ['compare', 'comparison', 'vs']):
-            return self._comparison_analysis(user_data)
-        elif any(word in message for word in ['grade', 'rating']) and 'score' not in message:
-            return self._driving_score(user_data)
-        elif any(word in message for word in ['week', 'weekly', 'summary']):
-            return self._weekly_summary(user_data)
-        elif any(word in message for word in ['streak', 'consistent', 'progress']):
-            return self._streak_analysis(user_data)
         
-        return self._personalized_greeting(user_data) if not self.session_memory.get('greeted') else random.choice(self.responses['default'])
+        return None
+    
+    def _contextual_response(self, message: str, user_data: Optional[Dict]) -> Optional[str]:
+        """Generate contextual responses based on conversation history"""
+        if len(self.conversation_history) > 1:
+            last_bot_response = next((item['bot'] for item in reversed(self.conversation_history) if 'bot' in item), None)
+            
+            # Follow-up questions
+            if last_bot_response and 'fuel' in last_bot_response.lower():
+                if any(word in message for word in ['more', 'tell me', 'explain']):
+                    return self._detailed_fuel_tips(user_data)
+            
+            # Clarification requests
+            if any(word in message for word in ['what do you mean', 'explain', 'clarify']):
+                return "Let me clarify! I can help you with:\n• Analyzing your driving patterns\n• Fuel efficiency tips\n• Maintenance schedules\n• Safety advice\n\nWhat specific area interests you?"
+        
+        return None
+    
+    def _speed_specific_advice(self, speed: str) -> str:
+        """Provide speed-specific advice"""
+        try:
+            speed_val = float(re.findall(r'\d+(?:\.\d+)?', speed)[0])
+            if speed_val > 100:
+                return "That's quite fast! Consider reducing speed to 80-90 km/h for better fuel efficiency and safety."
+            elif speed_val > 80:
+                return "Good highway speed! You're in the efficient range. Maintain steady speeds for best results."
+            elif speed_val > 50:
+                return "Perfect speed range for fuel efficiency! This is the sweet spot for most vehicles."
+            else:
+                return "City driving speeds are great for fuel economy. Focus on smooth acceleration and braking."
+        except:
+            return "Speed management is key to efficient driving. Aim for 50-80 km/h when possible."
+    
+    def _fuel_specific_advice(self, fuel: str, user_data: Optional[Dict]) -> str:
+        """Provide fuel-specific advice"""
+        base_advice = "Here are ways to optimize your fuel consumption:\n• Maintain steady speeds\n• Avoid rapid acceleration\n• Keep tires properly inflated\n• Remove excess weight"
+        
+        if user_data and user_data.get('recent_trips'):
+            trips = user_data['recent_trips']
+            avg_fuel = sum(trip.get('fuel_consumed', 0) for trip in trips) / len(trips)
+            base_advice += f"\n\n📊 Your average fuel consumption: {avg_fuel:.1f}L per trip"
+        
+        return base_advice
+    
+    def _intelligent_default(self, message: str, user_data: Optional[Dict], nlp_analysis: Optional[Dict] = None) -> str:
+        """Generate intelligent default responses with NLP enhancement"""
+        if not self.session_memory.get('greeted'):
+            return self._personalized_greeting(user_data)
+        
+        # Use NLP analysis for better default responses
+        if nlp_analysis:
+            sentiment = nlp_analysis.get('sentiment', {}).get('final', 'neutral')
+            keywords = nlp_analysis.get('keywords', [])
+            
+            # Sentiment-aware responses
+            if sentiment == 'negative':
+                return "I understand you might be experiencing some issues. I'm here to help! Can you tell me more about what's concerning you with your vehicle?"
+            elif sentiment == 'positive':
+                return "Great to hear positive feedback! How can I help you optimize your driving experience even further?"
+            
+            # Keyword-based suggestions
+            if keywords:
+                relevant_keywords = [kw for kw in keywords if kw in ['fuel', 'speed', 'maintenance', 'safety', 'cost']]
+                if relevant_keywords:
+                    return f"I noticed you mentioned {', '.join(relevant_keywords)}. I can provide detailed advice on these topics. What specific aspect interests you most?"
+        
+        # Analyze message for potential topics
+        if len(message.split()) > 5:  # Longer messages
+            return "I understand you're asking about vehicle-related topics. I can help with driving tips, fuel efficiency, maintenance, and trip analysis. Could you be more specific about what you'd like to know?"
+        
+        return random.choice(self.responses['default'])
+    
+    def _add_to_history(self, sender: str, message: str):
+        """Add message to conversation history"""
+        self.conversation_history.append({sender: message, 'timestamp': datetime.now()})
 
     def _analyze_trip_data(self, user_data):
         if not user_data or 'recent_trips' not in user_data:
@@ -125,6 +330,96 @@ class VehicleChatbot:
             recommendations += "• Great job on smooth driving with minimal braking!\n"
         
         return analysis + recommendations
+    
+    def _weather_driving_advice(self) -> str:
+        """Weather-specific driving advice"""
+        return "🌦️ Weather Driving Tips:\n\n🌧️ **Rain:**\n• Reduce speed by 10-15%\n• Increase following distance to 4+ seconds\n• Use headlights even during day\n• Avoid sudden movements\n\n❄️ **Snow/Ice:**\n• Drive 50% slower than normal\n• Brake gently and early\n• Accelerate slowly\n• Keep emergency kit in car\n\n🌫️ **Fog:**\n• Use low beam headlights\n• Follow road markings\n• Increase following distance\n• Pull over if visibility is too poor"
+    
+    def _route_advice(self) -> str:
+        """Route planning and navigation advice"""
+        return "🗺️ Smart Route Planning:\n\n📱 **Before You Go:**\n• Check traffic conditions\n• Plan fuel stops for long trips\n• Consider alternate routes\n• Update GPS maps regularly\n\n⛽ **Fuel Efficiency Routes:**\n• Avoid heavy traffic areas\n• Choose highways over city streets\n• Plan errands in one trip\n• Use route optimization apps\n\n🚗 **Safety First:**\n• Share your route with someone\n• Check weather conditions\n• Ensure vehicle is road-ready"
+    
+    def _cost_saving_tips(self, user_data: Optional[Dict]) -> str:
+        """Cost-saving driving tips"""
+        base_tips = "💰 Cost-Saving Driving Tips:\n\n⛽ **Fuel Costs:**\n• Maintain steady speeds (50-80 km/h)\n• Remove excess weight\n• Keep tires properly inflated\n• Combine multiple errands\n\n🔧 **Maintenance Costs:**\n• Follow service schedules\n• Check fluids regularly\n• Address issues early\n• Learn basic maintenance\n\n🚗 **Smart Driving:**\n• Avoid rush hour when possible\n• Use cruise control on highways\n• Plan efficient routes"
+        
+        if user_data and user_data.get('recent_trips'):
+            trips = user_data['recent_trips']
+            avg_fuel = sum(trip.get('fuel_consumed', 0) for trip in trips) / len(trips)
+            total_distance = sum(trip.get('distance_km', 0) for trip in trips)
+            
+            if avg_fuel > 0:
+                efficiency = total_distance / (avg_fuel * len(trips))
+                base_tips += f"\n\n📊 **Your Stats:**\n• Current efficiency: ~{efficiency:.1f} km/L\n• Potential savings with 15% improvement: ~{efficiency * 0.15:.1f} km/L"
+        
+        return base_tips
+    
+    def _personalized_fuel_advice(self, user_data: Dict) -> str:
+        """Personalized fuel efficiency advice based on user data"""
+        trips = user_data.get('recent_trips', [])
+        if not trips:
+            return random.choice(self.responses['fuel_efficiency'])
+        
+        avg_speed = sum(trip.get('avg_speed_kmph', 0) for trip in trips) / len(trips)
+        avg_rpm = sum(trip.get('max_rpm', 0) for trip in trips) / len(trips)
+        
+        advice = "⛽ **Personalized Fuel Tips for You:**\n\n"
+        
+        if avg_speed > 85:
+            advice += "🐌 **Speed Optimization:** Your average speed is {:.1f} km/h. Reducing to 70-80 km/h could improve fuel efficiency by 15-20%\n\n".format(avg_speed)
+        elif avg_speed < 40:
+            advice += "🏙️ **City Driving:** Your low average speed suggests city driving. Focus on smooth acceleration and anticipating traffic lights\n\n"
+        
+        if avg_rpm > 3500:
+            advice += "🔧 **RPM Management:** Your average max RPM is {:.0f}. Try shifting earlier or accelerating more gently\n\n".format(avg_rpm)
+        
+        advice += "💡 **Quick Wins:**\n• Check tire pressure monthly\n• Remove unnecessary weight\n• Plan combined trips\n• Use A/C wisely (windows up at highway speeds)"
+        
+        return advice
+    
+    def _personalized_driving_tips(self, user_data: Dict) -> str:
+        """Personalized driving tips based on user patterns"""
+        trips = user_data.get('recent_trips', [])
+        if not trips:
+            return random.choice(self.responses['driving_tips'])
+        
+        avg_brake_events = sum(trip.get('brake_events', 0) for trip in trips) / len(trips)
+        avg_speed = sum(trip.get('avg_speed_kmph', 0) for trip in trips) / len(trips)
+        
+        tips = "🚗 **Personalized Driving Tips:**\n\n"
+        
+        if avg_brake_events > 12:
+            tips += "🛑 **Smooth Driving:** You average {:.1f} brake events per trip. Try:\n• Looking further ahead\n• Coasting to red lights\n• Maintaining steady following distance\n\n".format(avg_brake_events)
+        
+        if avg_speed > 80:
+            tips += "⚡ **Speed Management:** Consider reducing highway speeds slightly for better fuel economy and safety\n\n"
+        
+        tips += "🎯 **Focus Areas:**\n• Anticipate traffic flow\n• Maintain 3-second following rule\n• Use gentle inputs (steering, braking, acceleration)\n• Stay alert and avoid distractions"
+        
+        return tips
+    
+    def _detailed_fuel_tips(self, user_data: Optional[Dict]) -> str:
+        """Detailed fuel efficiency explanation"""
+        return "🔍 **Detailed Fuel Efficiency Guide:**\n\n🏎️ **Speed & Efficiency:**\n• 50-80 km/h: Optimal efficiency zone\n• Every 10 km/h over 80: ~10% more fuel\n• Highway vs city: 15-20% difference\n\n🚗 **Driving Techniques:**\n• Gradual acceleration (0-60 in 15+ seconds)\n• Anticipate stops (coast vs brake)\n• Maintain steady speeds\n• Use cruise control on highways\n\n🔧 **Vehicle Factors:**\n• Tire pressure: 3% efficiency per 1 PSI low\n• Weight: 2% per 100 lbs excess\n• Aerodynamics: Windows vs A/C at speed\n• Engine maintenance: 4% with proper tune-up"
+    
+    def _alert_advice(self) -> str:
+        """Enhanced alert and warning advice"""
+        return "⚠️ **Vehicle Alert Guide:**\n\n🚨 **Immediate Action Required:**\n• Engine temperature warning\n• Oil pressure light\n• Brake system warning\n• Battery/charging system\n\n⚡ **Soon (within days):**\n• Low tire pressure\n• Fuel level low\n• Maintenance due\n• Check engine light\n\n📅 **Preventive Monitoring:**\n• Dashboard warning lights\n• Unusual noises or vibrations\n• Changes in performance\n• Fluid leaks\n\n💡 **Pro Tip:** Address warnings early to prevent costly repairs!"
+    
+    def _gratitude_response(self) -> str:
+        """Varied gratitude responses"""
+        responses = [
+            "You're welcome! Drive safely! 🚗",
+            "Happy to help! Stay safe on the roads! 🛣️",
+            "Anytime! Feel free to ask more questions. 🤖",
+            "Glad I could assist! Keep up the good driving! 👍",
+            "My pleasure! Remember, safe driving saves lives and money! 💰"
+        ]
+        return random.choice(responses)
+    
+    def _acceleration_advice(self) -> str:
+        """Enhanced acceleration advice"""
+        return "🚀 **Smart Acceleration Guide:**\n\n⚡ **Fuel-Efficient Acceleration:**\n• 0-60 km/h in 15+ seconds\n• Keep RPM under 3000\n• Use 75% throttle maximum\n• Shift at 2500 RPM (manual)\n\n🏁 **Performance vs Economy:**\n• Aggressive: 0-60 in <10 sec (40% more fuel)\n• Normal: 0-60 in 10-15 sec (balanced)\n• Eco: 0-60 in 15+ sec (optimal efficiency)\n\n🎯 **Technique Tips:**\n• Smooth, progressive pressure\n• Anticipate traffic flow\n• Use eco-mode when available\n• Coast to decelerate when possible"
 
     def _performance_advice(self, user_data):
         if not user_data or not user_data.get('recent_trips'):
@@ -302,3 +597,39 @@ class VehicleChatbot:
             return f"🌱 {streak} efficient trip(s). Build a longer streak!"
         else:
             return "💡 Focus on steady speeds (40-80 km/h) and smooth driving!"
+    
+    def get_conversation_summary(self) -> str:
+        """Get a summary of the conversation"""
+        if not self.conversation_history:
+            return "No conversation history available."
+        
+        user_messages = [item.get('user', '') for item in self.conversation_history if 'user' in item]
+        topics = []
+        
+        for message in user_messages:
+            message_lower = message.lower()
+            for category in self.patterns.keys():
+                for pattern in self.patterns[category]:
+                    if re.search(pattern, message_lower, re.IGNORECASE):
+                        if category not in topics:
+                            topics.append(category)
+        
+        if topics:
+            return f"📋 **Conversation Summary:**\nTopics discussed: {', '.join(topics)}\nTotal messages: {len(user_messages)}"
+        else:
+            return "📋 **Conversation Summary:**\nGeneral vehicle assistance discussion"
+    
+    def get_nlp_insights(self, message: str) -> Dict:
+        """Get NLP insights for debugging/analysis"""
+        if self.nlp_engine:
+            try:
+                return self.nlp_engine.analyze_message(message)
+            except Exception as e:
+                return {'error': str(e)}
+        return {'error': 'NLP engine not available'}
+    
+    def clear_session(self):
+        """Clear session data for new conversation"""
+        self.session_memory.clear()
+        self.conversation_history.clear()
+        self.user_context.clear()
