@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Route Planner - FleetTrack</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base_layout.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='route_planner.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,29 +15,13 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-    <header class="main-header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-car-side logo-icon"></i>
-                    <span>FleetTrack</span>
-                </div>
-                <nav class="main-nav">
-                    <ul>
-                        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                        <li><a href="#" class="active"><i class="fas fa-route"></i> Route Planner</a></li>
-                        <li><a href="{{ url_for('ai_features') }}"><i class="fas fa-brain"></i> AI Features</a></li>
-                        <li><a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
-    </header>
+    {% set active_page = 'route_planner' %}
+    {% include 'base_header.html' %}
 
-    <div class="route-planner-container">
-        <div class="planner-header">
+    <div class="container main-content">
+        <div class="page-header">
             <h1><i class="fas fa-route"></i> Smart Route Planner</h1>
-            <p class="planner-subtitle">AI-powered route optimization with real-time traffic and fuel efficiency analysis</p>
+            <p class="page-subtitle" style="text-align: center;">AI-powered route optimization with real-time traffic and fuel efficiency analysis</p>
         </div>
 
         <div class="planner-content">
@@ -152,9 +137,7 @@
                 </div>
             </div>
 
-
         </div>
-    </div>
 
     <!-- Loading Modal -->
     <div id="loadingModal" class="modal loading-modal">

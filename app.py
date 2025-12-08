@@ -509,32 +509,7 @@ def clear_chatbot_session():
     return jsonify({'success': True})
 
 
-@app.route("/alerts")
-@login_required
-def alerts_page():
-    recent_alerts = get_recent_alerts(session['user_id'], limit=50)
-    return render_template("alerts.html", alerts=recent_alerts)
 
-
-@app.route("/resolve_alert/<int:alert_id>", methods=["POST"])
-@login_required
-def resolve_alert(alert_id):
-    conn = get_db_connection()
-    conn.execute(
-        "UPDATE alerts SET resolved = TRUE WHERE id = ? AND user_id = ?",
-        (alert_id, session['user_id'])
-    )
-    conn.commit()
-    conn.close()
-    flash("Alert marked as resolved.", "success")
-    return redirect("/alerts")
-
-
-@app.route("/model-info")
-def model_info_page():
-    if not ML_MODEL_LOADED:
-        return render_template("model_info.html", model_loaded=False)
-    return render_template("model_info.html", model_loaded=True, model_info=model_info)
 
 
 @app.route("/route-planner")

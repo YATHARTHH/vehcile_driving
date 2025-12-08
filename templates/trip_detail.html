@@ -11,32 +11,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base_layout.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='trip_detail.css') }}">
     
    
 </head>
 
 <body>
-    <!-- Header -->
-    <header class="main-header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-car-side logo-icon"></i>
-                    <span>FleetTrack</span>
-                </div>
-                <nav class="main-nav">
-                    <ul>
-                        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                        <li><a href="{{ url_for('route_planner') }}"><i class="fas fa-route"></i> Route Planner</a></li>
-                        <li><a href="{{ url_for('ai_features') }}"><i class="fas fa-brain"></i> AI Features</a></li>
-                        <li><a href="#" class="active"><i class="fas fa-map-marked-alt"></i> Trip Details</a></li>
-                        <li><a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
-    </header>
+    {% set active_page = 'trip_detail' %}
+    {% include 'base_header.html' %}
 
     <div class="container main-content">
         <div class="header-section">
@@ -269,32 +252,7 @@
         {% endif %}
     </div>
 
-    <!-- Footer -->
-    <footer class="main-footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <i class="fas fa-car-side"></i>
-                    <span>FleetTrack </span>
-                </div>
-                <div class="footer-links">
-                    <a href="#">About</a>
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms of Service</a>
-                    <a href="#">Contact</a>
-                </div>
-                <div class="footer-social">
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-linkedin"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                </div>
-            </div>
-            <div class="copyright">
-                &copy; 2025 FleetTrack Analytics. All rights reserved.
-            </div>
-        </div>
-    </footer>
+    {% include 'base_footer.html' %}
 
     {% if trip %}
     <script>
