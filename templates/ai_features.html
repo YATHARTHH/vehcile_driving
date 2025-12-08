@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Features - FleetTrack</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='ai_features.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-car-side logo-icon"></i>
+                    <span>FleetTrack</span>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="{{ url_for('route_planner') }}"><i class="fas fa-route"></i> Route Planner</a></li>
+                        <li><a href="#" class="active"><i class="fas fa-brain"></i> AI Features</a></li>
+                        <li><a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container main-content">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1><i class="fas fa-brain"></i> AI-Powered Fleet Intelligence</h1>
+                <p>Experience the future of vehicle analytics with our advanced AI features</p>
+            </div>
+        </div>
+
+        <!-- AI Features Grid -->
+        <div class="features-grid">
+            <!-- Trip Sentiment Analysis -->
+            <div class="feature-card sentiment-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3>Trip Sentiment Analysis</h3>
+                </div>
+                <div class="feature-content">
+                    <p>Analyzes driving patterns using transformers/BERT models</p>
+                    <div class="feature-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Sentiment insights (positive/negative/neutral)</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Confidence scores and descriptive analysis</span>
+                        </div>
+                    </div>
+                    <button class="feature-btn" onclick="showSentimentDemo()">
+                        <i class="fas fa-play"></i> Try Demo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Smart Trip Insights -->
+            <div class="feature-card insights-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h3>Smart Trip Insights</h3>
+                </div>
+                <div class="feature-content">
+                    <p>Real-time analysis of fuel efficiency, speed patterns, and driving smoothness</p>
+                    <div class="feature-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Color-coded insights with actionable recommendations</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Performance scoring with visual indicators</span>
+                        </div>
+                    </div>
+                    <button class="feature-btn" onclick="showInsightsDemo()">
+                        <i class="fas fa-chart-line"></i> View Insights
+                    </button>
+                </div>
+            </div>
+
+            <!-- Personalized AI Tips -->
+            <div class="feature-card tips-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
+                    <h3>Personalized AI Tips</h3>
+                </div>
+                <div class="feature-content">
+                    <p>Context-aware driving recommendations tailored to your style</p>
+                    <div class="feature-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Categorized by difficulty (Easy/Medium/Hard)</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Impact predictions for each tip</span>
+                        </div>
+                    </div>
+                    <button class="feature-btn" onclick="showTipsDemo()">
+                        <i class="fas fa-magic"></i> Get Tips
+                    </button>
+                </div>
+            </div>
+
+            <!-- Anomaly Detection -->
+            <div class="feature-card anomaly-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3>Anomaly Detection</h3>
+                </div>
+                <div class="feature-content">
+                    <p>ML-powered detection of unusual driving patterns</p>
+                    <div class="feature-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Severity classification (High/Medium/Low)</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Specific recommendations for each anomaly type</span>
+                        </div>
+                    </div>
+                    <button class="feature-btn" onclick="showAnomalyDemo()">
+                        <i class="fas fa-search"></i> Detect Issues
+                    </button>
+                </div>
+            </div>
+
+            <!-- Predictive Maintenance -->
+            <div class="feature-card maintenance-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-wrench"></i>
+                    </div>
+                    <h3>Predictive Maintenance</h3>
+                </div>
+                <div class="feature-content">
+                    <p>AI-powered maintenance risk assessment</p>
+                    <div class="feature-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Timeline predictions for service needs</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Component-specific alerts (engine, brakes, tires)</span>
+                        </div>
+                    </div>
+                    <button class="feature-btn" onclick="showMaintenanceDemo()">
+                        <i class="fas fa-calendar-alt"></i> Schedule Check
+                    </button>
+                </div>
+            </div>
+
+            <!-- Smart Recommendations Engine -->
+            <div class="feature-card recommendations-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3>Smart Recommendations</h3>
+                </div>
+                <div class="feature-content">
+                    <p>Contextual recommendations based on weather, user profile, and trip data</p>
+                    <div class="feature-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Priority-based ranking system</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Real-time coaching tips</span>
+                        </div>
+                    </div>
+                    <button class="feature-btn" onclick="showRecommendationsDemo()">
+                        <i class="fas fa-compass"></i> Get Recommendations
+                    </button>
+                </div>
+            </div>
+
+            <!-- Real-Time AI Coach -->
+            <div class="feature-card coach-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3>Real-Time AI Coach</h3>
+                </div>
+                <div class="feature-content">
+                    <p>Live driving score updates and instant feedback</p>
+                    <div class="feature-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Instant feedback on speed, RPM, and fuel consumption</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Dynamic coaching tips during trips</span>
+                        </div>
+                    </div>
+                    <button class="feature-btn" onclick="showCoachDemo()">
+                        <i class="fas fa-play-circle"></i> Start Coaching
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fuel Consumption Prediction -->
+            <div class="feature-card fuel-card">
+                <div class="feature-header">
+                    <div class="feature-icon">
+                        <i class="fas fa-gas-pump"></i>
+                    </div>
+                    <h3>Fuel Prediction</h3>
+                </div>
+                <div class="feature-content">
+                    <p>Route-based fuel predictions with multiple scenarios</p>
+                    <div class="feature-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Multiple driving style scenarios</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Cost estimation and efficiency forecasting</span>
+                        </div>
+                    </div>
+                    <button class="feature-btn" onclick="showFuelDemo()">
+                        <i class="fas fa-calculator"></i> Calculate Fuel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Benefits Section -->
+        <div class="benefits-section">
+            <h2><i class="fas fa-star"></i> Key Benefits</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="fas fa-trending-up"></i>
+                    </div>
+                    <h4>Trending & Effective Features</h4>
+                    <ul>
+                        <li>Sentiment Analysis: Uses latest NLP models for trip emotion analysis</li>
+                        <li>Real-time Coaching: Provides instant feedback like Tesla's autopilot</li>
+                        <li>Predictive Analytics: Prevents issues before they occur</li>
+                        <li>Personalization: Adapts to individual driving patterns</li>
+                    </ul>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h4>No Static Data Required</h4>
+                    <ul>
+                        <li>All insights generated from actual trip data</li>
+                        <li>Dynamic analysis based on driving patterns</li>
+                        <li>Real-time calculations and predictions</li>
+                        <li>Historical trend analysis for continuous improvement</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Modals -->
+        <div id="demoModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">AI Feature Demo</h3>
+                    <span class="close" onclick="closeModal()">&times;</span>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Dynamic content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-car-side"></i>
+                    <span>FleetTrack </span>
+                </div>
+                <div class="footer-links">
+                    <a href="#">About</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Contact</a>
+                </div>
+                <div class="footer-social">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="copyright">
+                &copy; 2025 FleetTrack Analytics. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='ai_features.js') }}"></script>
+</body>
+
+</html>

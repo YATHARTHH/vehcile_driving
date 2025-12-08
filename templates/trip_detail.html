@@ -28,7 +28,10 @@
                 <nav class="main-nav">
                     <ul>
                         <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                        <li><a href="#" class="active"><i class="fas fa-route"></i> Trips</a></li>
+                        <li><a href="{{ url_for('route_planner') }}"><i class="fas fa-route"></i> Route Planner</a></li>
+                        <li><a href="{{ url_for('ai_features') }}"><i class="fas fa-brain"></i> AI Features</a></li>
+                        <li><a href="#" class="active"><i class="fas fa-map-marked-alt"></i> Trip Details</a></li>
+                        <li><a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     </ul>
                 </nav>
             </div>

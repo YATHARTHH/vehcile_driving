@@ -19,6 +19,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from chatbot.chatbot_logic import VehicleChatbot
 from flask import jsonify
 from route_optimization.route_engine import RouteOptimizer, geocode_location
+from ai_insights import (
+    analyze_trip_sentiment, detect_anomalies, predict_maintenance,
+    generate_recommendations, predict_fuel_consumption
+)
 
 # Logging Setup
 logging.basicConfig(level=logging.INFO)
@@ -539,6 +543,12 @@ def route_planner():
     return render_template("route_planner.html")
 
 
+@app.route("/ai-features")
+@login_required
+def ai_features():
+    return render_template("ai_features.html")
+
+
 @app.route("/api/save-route", methods=["POST"])
 @login_required
 def save_route():
@@ -599,6 +609,154 @@ def save_route():
         logging.error(f"Save route error: {e}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)})
 
+
+@app.route("/api/ai-sentiment", methods=["POST"])
+@login_required
+def ai_sentiment():
+    try:
+        data = request.get_json()
+        trip_id = data.get('trip_id')
+        
+        if not trip_id:
+            return jsonify({'success': False, 'error': 'Trip ID required'})
+        
+        conn = get_db_connection()
+        trip = conn.execute("SELECT * FROM trips WHERE id = ? AND user_id = ?", 
+                           (trip_id, session['user_id'])).fetchone()
+        conn.close()
+        
+        if not trip:
+            return jsonify({'success': False, 'error': 'Trip not found'})
+        
+        trip_dict = dict(trip)
+        sentiment_result = analyze_trip_sentiment(trip_dict)
+        
+        return jsonify({'success': True, 'sentiment': sentiment_result})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route("/api/anomaly-detection", methods=["POST"])
+@login_required
+def anomaly_detection():
+    try:
+        data = request.get_json()
+        trip_id = data.get('trip_id')
+        
+        conn = get_db_connection()
+        trip = conn.execute("SELECT * FROM trips WHERE id = ? AND user_id = ?", 
+                           (trip_id, session['user_id'])).fetchone()
+        
+        # Get user history for comparison
+        history = conn.execute(
+            "SELECT * FROM trips WHERE user_id = ? ORDER BY trip_date DESC LIMIT 20",
+            (session['user_id'],)
+        ).fetchall()
+        conn.close()
+        
+        if not trip:
+            return jsonify({'success': False, 'error': 'Trip not found'})
+        
+        trip_dict = dict(trip)
+        history_list = [dict(h) for h in history]
+        
+        anomaly_result = detect_anomalies(trip_dict, history_list)
+        
+        return jsonify({'success': True, 'anomalies': anomaly_result})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route("/api/predictive-maintenance", methods=["GET"])
+@login_required
+def predictive_maintenance():
+    try:
+        conn = get_db_connection()
+        recent_trip = conn.execute(
+            "SELECT * FROM trips WHERE user_id = ? ORDER BY trip_date DESC LIMIT 1",
+            (session['user_id'],)
+        ).fetchone()
+        
+        history = conn.execute(
+            "SELECT * FROM trips WHERE user_id = ? ORDER BY trip_date DESC LIMIT 30",
+            (session['user_id'],)
+        ).fetchall()
+        conn.close()
+        
+        if not recent_trip:
+            return jsonify({'success': False, 'error': 'No trip data available'})
+        
+        trip_dict = dict(recent_trip)
+        history_list = [dict(h) for h in history]
+        
+        maintenance_result = predict_maintenance(trip_dict, history_list)
+        
+        return jsonify({'success': True, 'maintenance': maintenance_result})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route("/api/smart-recommendations", methods=["POST"])
+@login_required
+def smart_recommendations():
+    try:
+        data = request.get_json()
+        trip_id = data.get('trip_id')
+        context = data.get('context', {})
+        
+        conn = get_db_connection()
+        trip = conn.execute("SELECT * FROM trips WHERE id = ? AND user_id = ?", 
+                           (trip_id, session['user_id'])).fetchone()
+        conn.close()
+        
+        if not trip:
+            return jsonify({'success': False, 'error': 'Trip not found'})
+        
+        trip_dict = dict(trip)
+        user_profile = {'experience_level': 'intermediate', 'goals': ['fuel_efficiency']}
+        
+        recommendations_result = generate_recommendations(trip_dict, user_profile, context)
+        
+        return jsonify({'success': True, 'recommendations': recommendations_result})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route("/api/fuel-prediction", methods=["POST"])
+@login_required
+def fuel_prediction():
+    try:
+        data = request.get_json()
+        route_data = data.get('route_data', {})
+        
+        # Get user's driving profile
+        conn = get_db_connection()
+        recent_trips = conn.execute(
+            "SELECT * FROM trips WHERE user_id = ? ORDER BY trip_date DESC LIMIT 10",
+            (session['user_id'],)
+        ).fetchall()
+        conn.close()
+        
+        # Calculate user's average efficiency
+        avg_efficiency = 12.0  # Default
+        if recent_trips:
+            efficiencies = []
+            for trip in recent_trips:
+                if trip['fuel_consumed'] > 0:
+                    eff = trip['distance_km'] / trip['fuel_consumed']
+                    efficiencies.append(eff)
+            if efficiencies:
+                avg_efficiency = sum(efficiencies) / len(efficiencies)
+        
+        user_profile = {'avg_efficiency': avg_efficiency, 'driving_style': 'normal'}
+        vehicle_data = {'engine_size': 1.6, 'vehicle_type': 'sedan', 'age_years': 3}
+        
+        prediction_result = predict_fuel_consumption(route_data, user_profile, vehicle_data)
+        
+        return jsonify({'success': True, 'prediction': prediction_result})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route("/api/route-optimize", methods=["POST"])
 @login_required

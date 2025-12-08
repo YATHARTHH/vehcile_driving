@@ -625,7 +625,7 @@ button {
   margin-top: 30px;
 }
 
-.back-button, .export-button {
+.back-button, .export-button, .logout-button {
   display: flex;
   align-items: center;
   padding: 10px 20px;
@@ -645,6 +645,11 @@ button {
   color: white;
 }
 
+.logout-button {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
 .back-button:hover {
   background-color: #d3d9db;
   color: var(--dark-color);
@@ -654,7 +659,22 @@ button {
   background-color: var(--primary-dark);
 }
 
-.back-button i, .export-button i {
+.logout-button:hover {
+  background-color: var(--primary-dark) !important;
+  color: white !important;
+}
+
+.logout-btn {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+.logout-btn:hover {
+  background-color: var(--primary-dark) !important;
+  color: white !important;
+}
+
+.back-button i, .export-button i, .logout-button i {
   margin-right: 10px;
 }
 

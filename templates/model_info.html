@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Model Info - FleetTrack</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-car-side logo-icon"></i>
+                    <span>FleetTrack</span>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="{{ url_for('route_planner') }}"><i class="fas fa-route"></i> Route Planner</a></li>
+                        <li><a href="{{ url_for('ai_features') }}"><i class="fas fa-brain"></i> AI Features</a></li>
+                        <li><a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container main-content">
+        <div class="page-header">
+            <h1><i class="fas fa-brain"></i> ML Model Information</h1>
+        </div>
+
+        {% if model_loaded %}
+        <div class="model-info-card">
+            <div class="model-status success">
+                <i class="fas fa-check-circle"></i>
+                <h3>Model Status: Active</h3>
+            </div>
+            
+            <div class="model-details">
+                <div class="detail-item">
+                    <strong>Model Name:</strong> {{ model_info.get('best_model_name', 'Unknown') }}
+                </div>
+                <div class="detail-item">
+                    <strong>Accuracy:</strong> {{ "%.2f"|format(model_info.get('accuracy', 0) * 100) }}%
+                </div>
+                <div class="detail-item">
+                    <strong>Training Date:</strong> {{ model_info.get('training_date', 'Unknown') }}
+                </div>
+                <div class="detail-item">
+                    <strong>Features:</strong> {{ model_info.get('feature_count', 'Unknown') }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="model-info-card">
+            <div class="model-status error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Model Status: Not Loaded</h3>
+                <p>ML model is not currently available for predictions.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <style>
+        .model-info-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .model-status {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .model-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .model-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .model-status i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .model-details {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .detail-item {
+            padding: 0.8rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+    </style>
+</body>
+</html>
