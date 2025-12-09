@@ -22,13 +22,15 @@
     {% include 'base_header.html' %}
 
     <div class="container main-content">
-        <div class="header-section">
-            <h2>Trip Details</h2>
-            <div class="trip-meta">
-                <span><i class="fas fa-map-marker-alt"></i> From: {{ trip['start_location'] }}</span>
-                <span><i class="fas fa-map-marker"></i> To: {{ trip['end_location'] }}</span>
-                <span><i class="fas fa-calendar"></i> Date: {{ trip['trip_date'] }}</span>
-            </div>
+        <div class="page-header">
+            <h1><i class="fas fa-map-marked-alt"></i> Trip Details</h1>
+            <p class="page-subtitle" style="text-align: center;">Comprehensive analysis of your driving performance and vehicle metrics</p>
+        </div>
+        
+        <div class="trip-meta">
+            <span><i class="fas fa-map-marker-alt"></i> From: {{ trip['start_location'] }}</span>
+            <span><i class="fas fa-map-marker"></i> To: {{ trip['end_location'] }}</span>
+            <span><i class="fas fa-calendar"></i> Date: {{ trip['trip_date'] }}</span>
         </div>
 
         {% if trip %}

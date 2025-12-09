@@ -132,10 +132,14 @@ body {
   margin-bottom: 40px;
 }
 
+.dashboard-welcome h1 {
+  margin-bottom: 1rem;
+}
+
 .dashboard-subtitle {
   color: var(--medium-text);
   font-size: 1.1rem;
-  margin-top: -15px;
+  margin-top: 0;
 }
 
 /* ==== DASHBOARD STATS ==== */
