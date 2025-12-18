@@ -1,0 +1,38 @@
+{
+  "model_type": "Enhanced Random Forest",
+  "features": [
+    "avg_speed_kmph",
+    "max_speed",
+    "max_rpm",
+    "fuel_consumed",
+    "brake_events",
+    "steering_angle",
+    "angular_velocity",
+    "acceleration",
+    "gear_position",
+    "tire_pressure",
+    "engine_load",
+    "throttle_position",
+    "brake_pressure",
+    "trip_duration"
+  ],
+  "feature_count": 14,
+  "behavior_classes": [
+    "Aggressive",
+    "Moderate",
+    "Safe"
+  ],
+  "maintenance_components": [
+    "brake_wear",
+    "tire_wear",
+    "engine_stress",
+    "fuel_efficiency"
+  ],
+  "created_at": "2025-12-18T13:15:17.637040",
+  "improvements": [
+    "Uses all 14 collected features instead of 6",
+    "Predictive maintenance capabilities",
+    "Enhanced behavior classification",
+    "Component-specific wear prediction"
+  ]
+}

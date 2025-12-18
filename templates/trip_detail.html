@@ -155,14 +155,32 @@
             {% endfor %}
         </div>
 
-        <!-- Health Recommendation Card -->
+        <!-- Rule-Based Health Recommendation -->
         <div class="health-card">
-            <div class="health-icon"><i class="fas fa-heart-pulse"></i></div>
+            <div class="health-icon"><i class="fas fa-stethoscope"></i></div>
             <div class="health-content">
-                <h3>Health Recommendation</h3>
-                <p>{{ health_recommendation }}</p>
+                <h3>Rule-Based Health Check</h3>
+                <p>{{ health_recommendation.split('🤖')[0].strip() }}</p>
             </div>
         </div>
+
+        <!-- ML Health Analysis (if available) -->
+        {% if ml_behavior != "Unknown" and maintenance_prediction %}
+        <div class="health-card ml-health-card">
+            <div class="health-icon"><i class="fas fa-robot"></i></div>
+            <div class="health-content">
+                <h3>AI Health Analysis</h3>
+                <p>{{ ml_health_recommendation }}</p>
+                {% if ml_health_score %}
+                <div class="health-score">
+                    <span class="score-label">Overall Health:</span>
+                    <span class="score-value">{{ ml_health_score }}/100</span>
+                    <span class="score-status">({{ ml_health_status }})</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Enhanced Maintenance alerts section -->
         <div class="maintenance-alerts">

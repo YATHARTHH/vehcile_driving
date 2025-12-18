@@ -14,21 +14,39 @@ from ml_model.driving_logic import calculate_driving_score
 from ml_model.maintenance_logic import (
     build_alerts, save_alerts_to_db, get_health_recommendation, get_recent_alerts
 )
+from ml_model.predictive_maintenance_dashboard import calculate_maintenance_predictions
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Logging Setup
 logging.basicConfig(level=logging.INFO)
 
-# --- ML pipeline loader ---
+# --- Enhanced ML pipeline loader ---
 try:
-    from ml_model.model_utils import load_artifacts, predict_behavior
-    model, scaler, le, model_info = load_artifacts()
-    ML_MODEL_LOADED = True
-    logging.info(f"✅ ML Pipeline Connected: {model_info['best_model_name']} ready for predictions")
+    # Try to load enhanced model first
+    from ml_model.enhanced_model_utils import (
+        load_enhanced_artifacts, predict_enhanced_behavior, 
+        predict_maintenance_needs, get_enhanced_model_info
+    )
+    
+    enhanced_loaded, enhanced_msg = load_enhanced_artifacts()
+    if enhanced_loaded:
+        ML_MODEL_LOADED = True
+        ENHANCED_MODEL_LOADED = True
+        model_info = get_enhanced_model_info()
+        logging.info(f"✅ Enhanced ML Pipeline Connected: {enhanced_msg}")
+    else:
+        # Fallback to original model
+        from ml_model.model_utils import load_artifacts, predict_behavior
+        model, scaler, le, model_info = load_artifacts()
+        ML_MODEL_LOADED = True
+        ENHANCED_MODEL_LOADED = False
+        logging.info(f"✅ Original ML Pipeline Connected: {model_info['best_model_name']}")
+        logging.info(f"ℹ️  Enhanced model not available: {enhanced_msg}")
 except Exception as e:
     logging.warning("⚠️  ML model loading failed", exc_info=True)
     ML_MODEL_LOADED = False
+    ENHANCED_MODEL_LOADED = False
     model = scaler = le = model_info = None
 
 
@@ -229,31 +247,77 @@ def trip_detail(trip_id):
             trip_dict["engine_load"], trip_dict["throttle_position"], trip_dict["brake_pressure"], trip_dict["trip_duration"]
         )
 
-        # ML prediction (if available)
+        # Enhanced ML prediction (if available)
         ml_behavior, ml_confidence, ml_model_used, ml_error = "Unknown", 0.0, "None", None
+        maintenance_prediction = None
+        
         if ML_MODEL_LOADED:
             try:
-                ml_result = predict_behavior(trip_dict, model, scaler, le, model_info)
-                ml_behavior = ml_result['behavior_class']
-                ml_confidence = ml_result['confidence']
-                ml_model_used = ml_result['model_used']
-                if 'error' in ml_result:
-                    ml_error = ml_result['error']
+                if ENHANCED_MODEL_LOADED:
+                    # Use enhanced model with all 14 features
+                    ml_result = predict_enhanced_behavior(trip_dict)
+                    maintenance_prediction = predict_maintenance_needs(trip_dict)
+                    
+                    ml_behavior = ml_result.get('behavior_class', 'Unknown')
+                    ml_confidence = ml_result.get('confidence', 0.0)
+                    ml_model_used = ml_result.get('model_used', 'Enhanced Model')
+                    
+                    if 'error' in ml_result:
+                        ml_error = ml_result['error']
+                    elif ml_result.get('warning'):
+                        ml_error = f"Warning: {ml_result['warning']}"
+                else:
+                    # Fallback to original model
+                    ml_result = predict_behavior(trip_dict, model, scaler, le, model_info)
+                    ml_behavior = ml_result['behavior_class']
+                    ml_confidence = ml_result['confidence']
+                    ml_model_used = ml_result['model_used']
+                    if 'error' in ml_result:
+                        ml_error = ml_result['error']
+                        
             except Exception as e:
                 ml_error = str(e)
         else:
             ml_error = "ML pipeline not loaded"
 
-        # Maintenance alerts and health recommendation
+        # Enhanced maintenance alerts and health recommendation
         maintenance_alerts, health_recommendation = build_alerts(trip_dict)
+        
+        # Add ML-based maintenance predictions if available
+        if maintenance_prediction and not maintenance_prediction.get('error'):
+            ml_alerts = maintenance_prediction.get('alerts', [])
+            
+            # Convert ML alerts to database format
+            for ml_alert in ml_alerts:
+                maintenance_alerts.append({
+                    "alert_type": f"ml_{ml_alert['component'].lower().replace(' ', '_')}",
+                    "severity": ml_alert['severity'],
+                    "title": f"ML Prediction: {ml_alert['component']}",
+                    "description": f"{ml_alert['message']} (Est. {ml_alert['days_remaining']} days)",
+                    "icon": ml_alert.get('icon', 'fa-wrench')
+                })
+            
+            # Enhanced health recommendation
+            overall_health = maintenance_prediction.get('overall_health', {})
+            ml_health_info = f"ML Health Analysis: Overall Score {overall_health.get('score', 0)}/100 ({overall_health.get('status', 'Unknown')}). Components Analyzed: {overall_health.get('components', 0)}"
+        else:
+            ml_health_info = ""
+        
         if maintenance_alerts:
             save_alerts_to_db(maintenance_alerts, session['user_id'], trip_id)
 
+        # Separate recommendations
+        combined_recommendation = health_recommendation
+        ml_health_recommendation = None
+        ml_health_score = None
+        ml_health_status = None
+        
         if ml_behavior != "Unknown":
-            ml_health = get_health_recommendation(ml_behavior)
-            combined_recommendation = f"{health_recommendation}\n\n{ml_health}"
-        else:
-            combined_recommendation = health_recommendation
+            ml_health_recommendation = get_health_recommendation(ml_behavior)
+            if maintenance_prediction and not maintenance_prediction.get('error'):
+                overall_health = maintenance_prediction.get('overall_health', {})
+                ml_health_score = overall_health.get('score', 0)
+                ml_health_status = overall_health.get('status', 'Unknown')
 
     except Exception as e:
         logging.error("Error in trip_detail", exc_info=True)
@@ -276,6 +340,10 @@ def trip_detail(trip_id):
         ml_model_used=ml_model_used,
         ml_error=ml_error,
         health_recommendation=combined_recommendation,
+        ml_health_recommendation=ml_health_recommendation,
+        ml_health_score=ml_health_score,
+        ml_health_status=ml_health_status,
+        maintenance_prediction=maintenance_prediction,
         maintenance_alerts=maintenance_alerts,
         fuel_consumed=trip_dict.get("fuel_consumed"),
         brake_events=trip_dict.get("brake_events"),
