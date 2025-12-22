@@ -4,19 +4,17 @@
     "avg_speed_kmph",
     "max_speed",
     "throttle_position",
-    "engine_load",
-    "trip_duration",
-    "distance_km"
+    "engine_load"
   ],
-  "accuracy": 0.9796511627906976,
-  "f1_score": 0.9705959176333865,
-  "post_fit_cv_f1": 0.9705959176333865,
+  "accuracy": 0.9166666666666666,
+  "f1_score": 0.798000851606757,
+  "post_fit_cv_f1": 0.798000851606757,
   "needs_scaling": false,
   "target_classes": [
     "Average",
     "Good",
     "Risky"
   ],
-  "training_data_size": 1144,
-  "test_split_size": 344
+  "training_data_size": 1397,
+  "test_split_size": 420
 }

@@ -30,9 +30,7 @@ features = [
     'avg_speed_kmph',
     'max_speed',
     'throttle_position',
-    'engine_load',
-    'trip_duration',
-    'distance_km'
+    'engine_load'
 ]
 target = 'score'
 
@@ -68,14 +66,14 @@ X_scaled = scaler.fit_transform(X)
 # --- 3. Define Models with Regularization ---
 models = {
     "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-    "Decision Tree": DecisionTreeClassifier(random_state=42, max_depth=6),
-    "k-Nearest Neighbors": KNeighborsClassifier(n_neighbors=5),
+    "Decision Tree": DecisionTreeClassifier(random_state=42, max_depth=3, min_samples_leaf=50),
+    "k-Nearest Neighbors": KNeighborsClassifier(n_neighbors=15),
     "SVM (RBF Kernel)": SVC(random_state=42, probability=True),
     "Random Forest": RandomForestClassifier(
         random_state=42,
-        n_estimators=300,
-        max_depth=11,
-        min_samples_leaf=5,
+        n_estimators=100,
+        max_depth=6,
+        min_samples_leaf=10,
         max_features='sqrt'
     ),
     "Gradient Boosting": GradientBoostingClassifier(
@@ -203,4 +201,4 @@ model_info = {
 with open('ml_model/model_info.json', 'w') as f:
     json.dump(model_info, f, indent=2)
 
-print("\n✅ Model artifacts saved successfully, Now go for optimized!")
+print("\nModel artifacts saved successfully, Now go for optimized!")

@@ -1,0 +1,30 @@
+{
+  "baseline_accuracy": 0.916667,
+  "optimized_accuracy": 0.9452380952380952,
+  "improvement": 0.0285710952380952,
+  "best_params": {
+    "max_depth": 8,
+    "max_features": 0.8,
+    "min_samples_leaf": 8,
+    "n_estimators": 150
+  },
+  "best_f1_cv": 0.7686930615625162,
+  "feature_importance": [
+    {
+      "Feature": "avg_speed_kmph",
+      "Importance": 0.5265251432474574
+    },
+    {
+      "Feature": "max_speed",
+      "Importance": 0.3350781755276913
+    },
+    {
+      "Feature": "engine_load",
+      "Importance": 0.06985133146134923
+    },
+    {
+      "Feature": "throttle_position",
+      "Importance": 0.06854534976350216
+    }
+  ]
+}
