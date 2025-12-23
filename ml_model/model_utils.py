@@ -97,8 +97,13 @@ def load_artifacts():
         with open(paths["info"], 'r') as f:
             info = json.load(f)
         
-        print(f"✅ Loaded {info['best_model_name']} model "
-              f"(Accuracy: {info['accuracy']:.1%}, F1: {info['f1_score']:.3f})")
+        # Handle both old and new model info formats
+        model_name = info.get('best_model_name', info.get('selected_model', 'Unknown Model'))
+        accuracy = info.get('accuracy', info.get('test_accuracy', 0.0))
+        f1_score = info.get('f1_score', info.get('cv_f1_score', 0.0))
+        
+        print(f"✅ Loaded {model_name} model "
+              f"(Accuracy: {accuracy:.1%}, F1: {f1_score:.3f})")
         
         return model, scaler, le, info
         
@@ -158,7 +163,7 @@ def predict_behavior(trip_data, model, scaler, le, model_info):
         return {
             'behavior_class': behavior_class,
             'confidence': confidence,
-            'model_used': model_info['best_model_name'],
+            'model_used': model_info.get('best_model_name', model_info.get('selected_model', 'Unknown')),
             'features_used': features,
             'feature_values': feature_values
         }
