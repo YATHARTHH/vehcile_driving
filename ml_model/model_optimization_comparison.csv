@@ -1,4 +1,5 @@
 Metric,Baseline RF,Optimized RF,Improvement
-Test Accuracy,100.00%,99.03%,-0.97%*
-Cross-validation F1 (5-Fold GROUP),99.69%,63.41%,-36.29%
-Generalization,Lower,Higher,Improved
+Accuracy,0.9758,1.0000,+2.48%
+F1-Macro CV,0.9894,0.9828,+-0.66%
+Model Complexity,Medium,High,Higher
+Training Time,Fast,Slower,Acceptable

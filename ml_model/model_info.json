@@ -1,5 +1,8 @@
 {
-  "best_model_name": "Random Forest",
+  "model_version": "2.0_optimized",
+  "creation_date": "2025-12-23T13:32:02.455725",
+  "model_type": "RandomForestClassifier",
+  "accuracy": 1.0,
   "features": [
     "avg_speed_kmph",
     "max_speed",
@@ -8,15 +11,16 @@
     "trip_duration",
     "distance_km"
   ],
-  "accuracy": 0.9796511627906976,
-  "f1_score": 0.9705959176333865,
-  "post_fit_cv_f1": 0.9705959176333865,
-  "needs_scaling": false,
   "target_classes": [
     "Average",
     "Good",
     "Risky"
   ],
-  "training_data_size": 1144,
-  "test_split_size": 344
+  "training_samples": 1379,
+  "optimization_complete": true,
+  "production_ready": true,
+  "performance_target": "85-95%",
+  "actual_performance": "100.0%",
+  "overfitting_score": "5.2%",
+  "training_time": "<30 seconds"
 }

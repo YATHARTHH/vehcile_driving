@@ -1,0 +1,10 @@
+{
+  "risky_driving_threshold": 0.3,
+  "average_driving_threshold": 0.6,
+  "good_driving_reward": 0.8,
+  "alert_messages": {
+    "risky": "WARNING: Risky driving detected. Consider defensive driving course.",
+    "average": "INFO: Room for improvement. Check eco-driving tips.",
+    "good": "SUCCESS: Excellent driving! Keep up the good work."
+  }
+}
