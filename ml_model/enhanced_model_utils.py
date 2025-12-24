@@ -10,7 +10,9 @@ import os
 import json
 import joblib
 import numpy as np
+import pandas as pd
 from datetime import datetime, timedelta
+import warnings
 
 class EnhancedModelLoader:
     def __init__(self, model_dir='ml_model'):
@@ -83,9 +85,9 @@ class EnhancedModelLoader:
                     value = 0.0  # Default value
                 features.append(float(value))
             
-            # Scale features
-            X = np.array(features).reshape(1, -1)
-            X_scaled = self.scaler.transform(X)
+            # Scale features using DataFrame to maintain feature names
+            X_df = pd.DataFrame([features], columns=self.all_features)
+            X_scaled = self.scaler.transform(X_df)
             
             # Predict
             prediction = self.behavior_model.predict(X_scaled)[0]
@@ -130,8 +132,9 @@ class EnhancedModelLoader:
                     value = 0.0
                 features.append(float(value))
             
-            X = np.array(features).reshape(1, -1)
-            X_scaled = self.scaler.transform(X)
+            # Scale features using DataFrame to maintain feature names
+            X_df = pd.DataFrame([features], columns=self.all_features)
+            X_scaled = self.scaler.transform(X_df)
             
             predictions = {}
             alerts = []
