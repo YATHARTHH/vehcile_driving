@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { 
   Brain, Heart, Lightbulb, UserCog, AlertTriangle, Wrench, Bot, GraduationCap, Fuel, 
-  CheckCircle2, Sparkles, X 
+  CheckCircle2, Sparkles, X, Star, Rocket, Database, Play, BarChart2, Edit3, Search, Calendar, Compass, Clock, Calculator
 } from 'lucide-react';
 
 export const AiInsights: React.FC = () => {
@@ -134,21 +134,23 @@ export const AiInsights: React.FC = () => {
     {
       id: 'sentiment',
       icon: Heart,
-      color: 'text-pink-400',
-      bgColor: 'bg-pink-500/10',
+      btnIcon: Play,
+      color: 'text-rose-500',
+      bgColor: 'bg-rose-500/10',
       title: 'Trip Sentiment Analysis',
-      desc: 'Analyzes driving patterns using NLP sentiment models.',
-      benefits: ['Sentiment insights (Positive/Neutral/Negative)', 'Confidence scores and descriptive triggers'],
-      btnText: 'Try Sentiment Demo',
+      desc: 'Analyzes driving patterns using transformers/BERT models',
+      benefits: ['Sentiment insights (positive/negative/neutral)', 'Confidence scores and descriptive analysis'],
+      btnText: 'Try Demo',
       action: () => { setActiveModal('sentiment'); handleSentimentDemo(); }
     },
     {
       id: 'insights',
       icon: Lightbulb,
-      color: 'text-amber-400',
+      btnIcon: BarChart2,
+      color: 'text-amber-500',
       bgColor: 'bg-amber-500/10',
       title: 'Smart Trip Insights',
-      desc: 'Real-time analysis of fuel efficiency, speed patterns, and driving smoothness.',
+      desc: 'Real-time analysis of fuel efficiency, speed patterns, and driving smoothness',
       benefits: ['Color-coded insights with actionable recommendations', 'Performance scoring with visual indicators'],
       btnText: 'View Insights',
       action: () => setActiveModal('insights')
@@ -156,21 +158,23 @@ export const AiInsights: React.FC = () => {
     {
       id: 'tips',
       icon: UserCog,
-      color: 'text-emerald-400',
-      bgColor: 'bg-emerald-500/10',
+      btnIcon: Edit3,
+      color: 'text-cyan-500',
+      bgColor: 'bg-cyan-500/10',
       title: 'Personalized AI Tips',
-      desc: 'Context-aware driving recommendations tailored to your style.',
-      benefits: ['Categorized by difficulty (Easy/Medium/Hard)', 'Fuel savings predictions for each tip'],
-      btnText: 'Get AI Tips',
+      desc: 'Context-aware driving recommendations tailored to your style',
+      benefits: ['Categorized by difficulty (Easy/Medium/Hard)', 'Impact predictions for each tip'],
+      btnText: 'Get Tips',
       action: () => setActiveModal('tips')
     },
     {
       id: 'anomaly',
       icon: AlertTriangle,
-      color: 'text-orange-400',
-      bgColor: 'bg-orange-500/10',
+      btnIcon: Search,
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-500/10',
       title: 'Anomaly Detection',
-      desc: 'ML-powered detection of unusual driving patterns.',
+      desc: 'ML-powered detection of unusual driving patterns',
       benefits: ['Severity classification (High/Medium/Low)', 'Specific recommendations for each anomaly type'],
       btnText: 'Detect Issues',
       action: () => { setActiveModal('anomaly'); handleAnomalyDemo(); }
@@ -178,64 +182,64 @@ export const AiInsights: React.FC = () => {
     {
       id: 'maintenance',
       icon: Wrench,
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-500/10',
+      btnIcon: Calendar,
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-500/10',
       title: 'Predictive Maintenance',
-      desc: 'AI-powered maintenance risk assessment and component wear forecasting.',
+      desc: 'AI-powered maintenance risk assessment',
       benefits: ['Timeline predictions for service needs', 'Component-specific alerts (engine, brakes, tires)'],
-      btnText: 'Run Diagnostics',
+      btnText: 'Schedule Check',
       action: () => { setActiveModal('maintenance'); runMaintenanceScan(); }
     },
     {
       id: 'recommendations',
       icon: Bot,
-      color: 'text-purple-400',
-      bgColor: 'bg-purple-500/10',
+      btnIcon: Compass,
+      color: 'text-teal-500',
+      bgColor: 'bg-teal-500/10',
       title: 'Smart Recommendations',
-      desc: 'Contextual recommendations based on weather, user profile, and trip data.',
-      benefits: ['Priority-based ranking system', 'Real-time driving coaching tips'],
+      desc: 'Contextual recommendations based on weather, user profile, and trip data',
+      benefits: ['Priority-based ranking system', 'Real-time coaching tips'],
       btnText: 'Get Recommendations',
       action: () => setActiveModal('recommendations')
     },
     {
       id: 'coach',
       icon: GraduationCap,
-      color: 'text-cyan-400',
-      bgColor: 'bg-cyan-500/10',
+      btnIcon: Clock,
+      color: 'text-red-500',
+      bgColor: 'bg-red-500/10',
       title: 'Real-Time AI Coach',
-      desc: 'Live driving score updates and instant feedback simulator.',
-      benefits: ['Instant feedback on speed, RPM, and fuel consumption', 'Dynamic coaching tips during simulated trips'],
-      btnText: 'Start AI Coach Simulator',
+      desc: 'Live driving score updates and instant feedback',
+      benefits: ['Instant feedback on speed, RPM, and fuel consumption', 'Dynamic coaching tips during trips'],
+      btnText: 'Start Coaching',
       action: () => setActiveModal('coach')
     },
     {
       id: 'fuel',
       icon: Fuel,
-      color: 'text-emerald-400',
+      btnIcon: Calculator,
+      color: 'text-emerald-500',
       bgColor: 'bg-emerald-500/10',
       title: 'Fuel Prediction',
-      desc: 'Route-based fuel predictions with multiple driving style scenarios.',
-      benefits: ['Multiple driving style scenarios (Eco, Normal, Aggressive)', 'Cost estimation and efficiency forecasting'],
+      desc: 'Route-based fuel predictions with multiple scenarios',
+      benefits: ['Multiple driving style scenarios', 'Cost estimation and efficiency forecasting'],
       btnText: 'Calculate Fuel',
       action: () => setActiveModal('fuel')
     }
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Title */}
-      <div className="glass-card p-6 rounded-3xl">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
-            <Brain className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">AI & Machine Learning Intelligence</h1>
-            <p className="text-sm text-slate-400 mt-1">
-              Interactive AI features, NLP sentiment analysis, real-time coaching, and predictive telemetry models
-            </p>
-          </div>
+    <div className="space-y-8 pb-12">
+      {/* Hero Section */}
+      <div className="glass-card p-8 rounded-3xl text-center space-y-2 border border-brand-500/20">
+        <div className="inline-flex items-center justify-center space-x-3 mb-1">
+          <Brain className="w-8 h-8 text-brand-400" />
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">AI-Powered Fleet Intelligence</h1>
         </div>
+        <p className="text-sm text-slate-400 max-w-xl mx-auto">
+          Experience the future of vehicle analytics with our advanced AI features
+        </p>
       </div>
 
       {/* Active Classifier Banner */}
@@ -245,11 +249,11 @@ export const AiInsights: React.FC = () => {
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
               <h3 className="font-bold text-white text-lg">
-                Active Model: {modelInfo?.best_model_name || 'Optimized RandomForestClassifier'}
+                Active Classifier Engine: {modelInfo?.best_model_name || 'Optimized RandomForestClassifier'}
               </h3>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Multi-dimensional telematics model trained on stratified k-fold vehicle datasets.
+              Real-time multi-dimensional telematics inference pipeline running in production.
             </p>
           </div>
 
@@ -264,26 +268,27 @@ export const AiInsights: React.FC = () => {
         </div>
       </div>
 
-      {/* 8 AI Feature Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* 8 AI Feature Cards in 3-Column Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {featureCards.map((card) => {
           const Icon = card.icon;
+          const BtnIcon = card.btnIcon;
           return (
-            <div key={card.id} className="glass-card p-5 rounded-3xl flex flex-col justify-between space-y-4 hover:border-brand-500/30 transition-all group">
-              <div className="space-y-3">
+            <div key={card.id} className="glass-card p-6 rounded-3xl flex flex-col justify-between space-y-4 hover:border-brand-500/40 transition-all group shadow-md">
+              <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <div className={`w-10 h-10 rounded-2xl ${card.bgColor} ${card.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <Icon className="w-5 h-5" />
+                  <div className={`w-12 h-12 rounded-2xl ${card.bgColor} ${card.color} flex items-center justify-center group-hover:scale-110 transition-transform shrink-0`}>
+                    <Icon className="w-6 h-6" />
                   </div>
-                  <h3 className="font-bold text-white text-base leading-tight">{card.title}</h3>
+                  <h3 className="font-bold text-white text-lg leading-tight">{card.title}</h3>
                 </div>
 
                 <p className="text-xs text-slate-400 leading-relaxed">{card.desc}</p>
 
-                <div className="space-y-1.5 pt-2 border-t border-dark-border">
+                <div className="space-y-2 pt-2 border-t border-dark-border">
                   {card.benefits.map((benefit, i) => (
-                    <div key={i} className="flex items-start space-x-2 text-[11px] text-slate-300">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-brand-400 shrink-0 mt-0.5" />
+                    <div key={i} className="flex items-start space-x-2 text-xs text-slate-300">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                       <span>{benefit}</span>
                     </div>
                   ))}
@@ -292,9 +297,9 @@ export const AiInsights: React.FC = () => {
 
               <button
                 onClick={card.action}
-                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-brand-600 text-slate-200 hover:text-white font-semibold text-xs transition-all flex items-center justify-center space-x-2 shadow-md"
+                className="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs transition-all flex items-center justify-center space-x-2 shadow-md glow-brand"
               >
-                <Sparkles className="w-4 h-4" />
+                <BtnIcon className="w-4 h-4" />
                 <span>{card.btnText}</span>
               </button>
             </div>
@@ -302,25 +307,67 @@ export const AiInsights: React.FC = () => {
         })}
       </div>
 
-      {/* Key Benefits Banner */}
-      <div className="glass-card p-6 rounded-3xl space-y-4">
-        <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-          <Sparkles className="w-5 h-5 text-amber-400" />
-          <span>Core AI Platform Capabilities</span>
-        </h2>
+      {/* Key Benefits Section */}
+      <div className="glass-card p-8 rounded-3xl space-y-6">
+        <div className="text-center space-y-1">
+          <h2 className="text-2xl font-bold text-white flex items-center justify-center space-x-2">
+            <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
+            <span>Key Benefits</span>
+          </h2>
+          <div className="w-12 h-1 bg-brand-500 rounded-full mx-auto"></div>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-2xl bg-dark-bg border border-dark-border space-y-2">
-            <h4 className="font-bold text-slate-200 text-sm">Real-Time Continuous Inference</h4>
-            <p className="text-xs text-slate-400">
-              Evaluates speed, acceleration, brake events, and engine load in real time to generate instantaneous driving safety scores.
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Card 1: Trending & Effective Features */}
+          <div className="p-6 rounded-2xl bg-dark-bg border border-brand-500/20 space-y-4">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+              <Rocket className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-white text-lg">Trending & Effective Features</h3>
+            <div className="space-y-2.5 text-xs text-slate-300">
+              <div className="flex items-start space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span><strong>Sentiment Analysis:</strong> Uses latest NLP models for trip emotion analysis</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span><strong>Real-time Coaching:</strong> Provides instant feedback like Tesla's autopilot</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span><strong>Predictive Analytics:</strong> Prevents issues before they occur</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span><strong>Personalization:</strong> Adapts to individual driving patterns</span>
+              </div>
+            </div>
           </div>
-          <div className="p-4 rounded-2xl bg-dark-bg border border-dark-border space-y-2">
-            <h4 className="font-bold text-slate-200 text-sm">Adaptive Fuel Savings</h4>
-            <p className="text-xs text-slate-400">
-              Machine learning models forecast route-specific fuel consumption and deliver customized coaching to reduce carbon emissions.
-            </p>
+
+          {/* Card 2: No Static Data Required */}
+          <div className="p-6 rounded-2xl bg-dark-bg border border-brand-500/20 space-y-4">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+              <Database className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-white text-lg">No Static Data Required</h3>
+            <div className="space-y-2.5 text-xs text-slate-300">
+              <div className="flex items-start space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>All insights generated from actual trip data</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>Dynamic analysis based on driving patterns</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>Real-time calculations and predictions</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>Historical trend analysis for continuous improvement</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -333,7 +380,7 @@ export const AiInsights: React.FC = () => {
           <div className="glass-card p-6 rounded-3xl max-w-lg w-full border border-dark-border space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-white text-lg flex items-center space-x-2">
-                <Heart className="w-5 h-5 text-pink-400" />
+                <Heart className="w-5 h-5 text-rose-500" />
                 <span>Trip Sentiment Analysis Demo</span>
               </h3>
               <button onClick={() => setActiveModal(null)} className="p-1 text-slate-400 hover:text-white">
@@ -353,7 +400,7 @@ export const AiInsights: React.FC = () => {
               <button
                 onClick={handleSentimentDemo}
                 disabled={loadingSentiment}
-                className="w-full py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs transition-colors"
+                className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors"
               >
                 {loadingSentiment ? 'Analyzing with BERT...' : 'Run Sentiment Inference'}
               </button>
@@ -470,7 +517,7 @@ export const AiInsights: React.FC = () => {
           <div className="glass-card p-6 rounded-3xl max-w-lg w-full border border-dark-border space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-white text-lg flex items-center space-x-2">
-                <AlertTriangle className="w-5 h-5 text-orange-400" />
+                <AlertTriangle className="w-5 h-5 text-purple-400" />
                 <span>Anomaly Detection Results</span>
               </h3>
               <button onClick={() => setActiveModal(null)} className="p-1 text-slate-400 hover:text-white">
@@ -485,13 +532,13 @@ export const AiInsights: React.FC = () => {
                 <div className="p-4 rounded-2xl bg-dark-bg border border-dark-border space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-400">Detected Telemetry Anomalies:</span>
-                    <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-orange-500/20 text-orange-400">
+                    <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-purple-500/20 text-purple-400">
                       {anomalyData?.anomalies ? anomalyData.anomalies.length : 1} Flagged
                     </span>
                   </div>
                   {(anomalyData?.anomalies || ['RPM Spike over 3,800 RPM']).map((anom: string, i: number) => (
                     <div key={i} className="flex items-center space-x-2 text-xs text-slate-300 pt-1">
-                      <AlertTriangle className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                      <AlertTriangle className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                       <span>{anom}</span>
                     </div>
                   ))}
@@ -508,7 +555,7 @@ export const AiInsights: React.FC = () => {
           <div className="glass-card p-6 rounded-3xl max-w-lg w-full border border-dark-border space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-white text-lg flex items-center space-x-2">
-                <Wrench className="w-5 h-5 text-blue-400" />
+                <Wrench className="w-5 h-5 text-indigo-400" />
                 <span>Predictive Maintenance Diagnostics</span>
               </h3>
               <button onClick={() => setActiveModal(null)} className="p-1 text-slate-400 hover:text-white">
@@ -554,7 +601,7 @@ export const AiInsights: React.FC = () => {
           <div className="glass-card p-6 rounded-3xl max-w-lg w-full border border-dark-border space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-white text-lg flex items-center space-x-2">
-                <Bot className="w-5 h-5 text-purple-400" />
+                <Bot className="w-5 h-5 text-teal-400" />
                 <span>Smart AI Recommendations</span>
               </h3>
               <button onClick={() => setActiveModal(null)} className="p-1 text-slate-400 hover:text-white">
@@ -563,8 +610,8 @@ export const AiInsights: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 space-y-1">
-                <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider block">Priority 1 • Weather Context</span>
+              <div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/20 space-y-1">
+                <span className="text-[10px] font-bold text-teal-300 uppercase tracking-wider block">Priority 1 • Weather Context</span>
                 <p className="text-sm font-semibold text-white">Wet Asphalt Driving Advice</p>
                 <p className="text-xs text-slate-400">Increase following distance to 4 seconds and keep tire pressure at 32 psi.</p>
               </div>
@@ -585,7 +632,7 @@ export const AiInsights: React.FC = () => {
           <div className="glass-card p-6 rounded-3xl max-w-lg w-full border border-dark-border space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-white text-lg flex items-center space-x-2">
-                <GraduationCap className="w-5 h-5 text-cyan-400" />
+                <GraduationCap className="w-5 h-5 text-red-400" />
                 <span>Real-Time AI Coach Simulator</span>
               </h3>
               <button onClick={() => setActiveModal(null)} className="p-1 text-slate-400 hover:text-white">
@@ -596,7 +643,7 @@ export const AiInsights: React.FC = () => {
             <div className="p-4 rounded-2xl bg-dark-bg border border-dark-border space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-400">Simulation Telemetry</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300">LIVE COACHING</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300">LIVE COACHING</span>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -608,7 +655,7 @@ export const AiInsights: React.FC = () => {
                     max="140"
                     value={coachSpeed}
                     onChange={(e) => setCoachSpeed(Number(e.target.value))}
-                    className="w-full mt-1 accent-cyan-400"
+                    className="w-full mt-1 accent-red-400"
                   />
                 </div>
                 <div>
@@ -624,10 +671,10 @@ export const AiInsights: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-900 border border-cyan-500/30 text-xs text-slate-200 flex items-start space-x-2">
-                <Sparkles className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+              <div className="p-3 rounded-xl bg-slate-900 border border-red-500/30 text-xs text-slate-200 flex items-start space-x-2">
+                <Sparkles className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-cyan-400 block mb-0.5">Coach Advice:</span>
+                  <span className="font-bold text-red-400 block mb-0.5">Coach Advice:</span>
                   {coachRpm > 3000 ? (
                     <span className="text-amber-300">⚠️ RPM is high ({coachRpm} RPM). Upshift to reduce fuel consumption!</span>
                   ) : coachSpeed > 90 ? (

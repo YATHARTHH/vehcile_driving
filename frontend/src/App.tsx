@@ -66,6 +66,7 @@ export const AppContent: React.FC = () => {
       <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
       <Route path="/trip/:tripId" element={<ProtectedLayout><TripDetailView /></ProtectedLayout>} />
       <Route path="/route-planner" element={<ProtectedLayout><RoutePlanner /></ProtectedLayout>} />
+      <Route path="/ai-features" element={<ProtectedLayout><AiInsights /></ProtectedLayout>} />
       <Route path="/ai-insights" element={<ProtectedLayout><AiInsights /></ProtectedLayout>} />
       <Route path="/model-info" element={<ProtectedLayout><ModelInfo /></ProtectedLayout>} />
       <Route path="/ai-assistant" element={<ProtectedLayout><AiAssistant /></ProtectedLayout>} />

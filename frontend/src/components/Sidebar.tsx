@@ -1,12 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Navigation, Bot, Activity, Cpu, Layers } from 'lucide-react';
+import { LayoutDashboard, Navigation, Bot, Activity, Brain, Layers } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/route-planner', label: 'Route Planner', icon: Navigation },
-    { to: '/ai-insights', label: 'AI Insights', icon: Cpu },
+    { to: '/ai-features', label: 'AI Features', icon: Brain },
     { to: '/model-info', label: 'ML Model Info', icon: Layers },
     { to: '/ai-assistant', label: 'AI Assistant', icon: Bot },
   ];
