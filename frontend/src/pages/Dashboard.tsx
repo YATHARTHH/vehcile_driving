@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { Trip } from '../types';
 import { 
-  Gauge, Navigation, Zap, Fuel, Activity, ArrowUpRight 
+  Gauge, Navigation, Zap, Fuel, Activity, ArrowUpRight, Search, Download, FileText, Filter 
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line 
@@ -12,6 +12,8 @@ import {
 export const Dashboard: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showExportModal, setShowExportModal] = useState(false);
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -26,6 +28,13 @@ export const Dashboard: React.FC = () => {
     };
     fetchTrips();
   }, []);
+
+  // Filtered trips by search term
+  const filteredTrips = trips.filter(t => 
+    (t.trip_date && t.trip_date.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (t.start_location && t.start_location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (t.end_location && t.end_location.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   // Compute Telematics Aggregates
   const totalDistance = trips.reduce((sum, t) => sum + (t.distance_km || 0), 0);
@@ -42,6 +51,47 @@ export const Dashboard: React.FC = () => {
     fuel: t.fuel_consumed,
     distance: t.distance_km
   }));
+
+  // CSV Export Functionality
+  const exportCSV = () => {
+    const headers = [
+      'ID', 'Trip Date', 'Distance (km)', 'Avg Speed (km/h)', 'Max Speed (km/h)', 
+      'Max RPM', 'Fuel Consumed (L)', 'Brake Events', 'Tire Pressure (psi)', 
+      'Engine Load (%)', 'Trip Duration (min)'
+    ];
+
+    const rows = filteredTrips.map(t => [
+      t.id, t.trip_date, t.distance_km, t.avg_speed_kmph, t.max_speed,
+      t.max_rpm, t.fuel_consumed, t.brake_events, t.tire_pressure,
+      t.engine_load, t.trip_duration
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' 
+      + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `ecodriving_trips_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowExportModal(false);
+  };
+
+  // JSON Export Functionality
+  const exportJSON = () => {
+    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+      JSON.stringify(filteredTrips, null, 2)
+    )}`;
+    const link = document.createElement('a');
+    link.setAttribute('href', jsonString);
+    link.setAttribute('download', `ecodriving_trips_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowExportModal(false);
+  };
 
   if (loading) {
     return (
@@ -65,6 +115,13 @@ export const Dashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowExportModal(true)}
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm border border-dark-border transition-all flex items-center space-x-2"
+          >
+            <Download className="w-4 h-4 text-brand-400" />
+            <span>Export Data</span>
+          </button>
           <Link
             to="/route-planner"
             className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium text-sm transition-all shadow-md glow-brand flex items-center space-x-2"
@@ -188,11 +245,25 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Trips Table */}
-      <div className="glass-card p-6 rounded-3xl overflow-hidden">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-slate-100 text-lg">Recent Trip Records</h3>
-          <span className="text-xs text-slate-400 font-mono">Total {trips.length} trips</span>
+      {/* Trips Table with Search Filter & Export */}
+      <div className="glass-card p-6 rounded-3xl overflow-hidden space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-slate-100 text-lg">Recent Trip Records</h3>
+            <span className="text-xs text-slate-400 font-mono">Showing {filteredTrips.length} of {trips.length} trips</span>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative min-w-[240px]">
+            <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by date or location..."
+              className="w-full bg-slate-900/80 border border-dark-border rounded-xl pl-9 pr-4 py-2 text-slate-200 text-xs focus:outline-none focus:border-brand-500"
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -209,7 +280,7 @@ export const Dashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-border text-sm font-medium">
-              {trips.map((t) => (
+              {filteredTrips.map((t) => (
                 <tr key={t.id} className="hover:bg-dark-hover/60 transition-colors">
                   <td className="py-3.5 px-4 text-slate-300">{t.trip_date || 'N/A'}</td>
                   <td className="py-3.5 px-4 text-slate-200">{t.distance_km} km</td>
@@ -238,6 +309,43 @@ export const Dashboard: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-card p-6 rounded-3xl max-w-md w-full border border-dark-border space-y-5">
+            <h3 className="font-bold text-white text-lg">Export Telematics Data</h3>
+            <p className="text-xs text-slate-400">Choose your preferred export format for {filteredTrips.length} trip records:</p>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={exportCSV}
+                className="p-4 rounded-2xl bg-slate-900 border border-dark-border hover:border-brand-500 text-left transition-all group"
+              >
+                <FileText className="w-6 h-6 text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
+                <span className="font-bold text-white text-sm block">CSV Format</span>
+                <span className="text-[10px] text-slate-400">Spreadsheet compatible (.csv)</span>
+              </button>
+
+              <button
+                onClick={exportJSON}
+                className="p-4 rounded-2xl bg-slate-900 border border-dark-border hover:border-brand-500 text-left transition-all group"
+              >
+                <Activity className="w-6 h-6 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
+                <span className="font-bold text-white text-sm block">JSON Format</span>
+                <span className="text-[10px] text-slate-400">Structured data (.json)</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowExportModal(false)}
+              className="w-full py-2.5 rounded-xl bg-slate-800 text-slate-300 font-semibold text-xs transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

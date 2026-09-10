@@ -102,7 +102,7 @@ def load_artifacts():
         accuracy = info.get('accuracy', info.get('test_accuracy', 0.0))
         f1_score = info.get('f1_score', info.get('cv_f1_score', 0.0))
         
-        print(f"✅ Loaded {model_name} model "
+        print(f"[ML Model] Loaded {model_name} model "
               f"(Accuracy: {accuracy:.1%}, F1: {f1_score:.3f})")
         
         return model, scaler, le, info

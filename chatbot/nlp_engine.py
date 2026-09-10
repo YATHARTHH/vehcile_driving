@@ -21,7 +21,7 @@ except ImportError:
 
 class NLPEngine:
     def __init__(self):
-        self.device = 0 if torch.cuda.is_available() else -1
+        self.device = 0 if (torch and hasattr(torch, 'cuda') and torch.cuda.is_available()) else -1
         self._init_models()
         
     def _init_models(self):

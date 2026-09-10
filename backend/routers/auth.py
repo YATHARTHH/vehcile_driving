@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from pydantic import BaseModel
 
 from backend.database import get_db
 from backend.models.user import User
@@ -12,6 +13,11 @@ from backend.utils.auth import hash_password, verify_password, create_access_tok
 from utils.data_generator import generate_random_trip_data
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+class ForgotPasswordRequest(BaseModel):
+    username: str
+    vehicle_number: str
+    new_password: str
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(payload: UserCreate, db: AsyncSession = Depends(get_db)):
@@ -103,6 +109,26 @@ async def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Async
         "token_type": "bearer",
         "user": user
     }
+
+@router.post("/forgot-password")
+async def forgot_password(payload: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    username = payload.username.strip()
+    vehicle_number = payload.vehicle_number.strip().upper()
+    new_password = payload.new_password.strip()
+
+    if not (username and vehicle_number and new_password):
+        raise HTTPException(status_code=400, detail="All fields are required.")
+
+    result = await db.execute(
+        select(User).where(User.username == username, User.vehicle_number == vehicle_number)
+    )
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Username and vehicle registration number do not match.")
+
+    user.password = hash_password(new_password)
+    await db.commit()
+    return {"success": True, "message": "Password reset successfully. Please log in with your new password."}
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_profile(current_user: User = Depends(get_current_user)):

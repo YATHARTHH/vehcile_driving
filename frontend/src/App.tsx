@@ -3,9 +3,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './store/authContext';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
+import { Footer } from './components/Footer';
 
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { ForgotPassword } from './pages/ForgotPassword';
 import { Dashboard } from './pages/Dashboard';
 import { TripDetailView } from './pages/TripDetail';
 import { RoutePlanner } from './pages/RoutePlanner';
@@ -32,8 +34,9 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
       <Navbar />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 p-6 overflow-y-auto">
-          {children}
+        <main className="flex-1 p-6 overflow-y-auto flex flex-col justify-between">
+          <div>{children}</div>
+          <Footer />
         </main>
       </div>
     </div>
@@ -57,6 +60,7 @@ export const AppContent: React.FC = () => {
     <Routes>
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
 
       <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
       <Route path="/trip/:tripId" element={<ProtectedLayout><TripDetailView /></ProtectedLayout>} />

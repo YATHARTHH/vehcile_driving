@@ -20,9 +20,9 @@ class VehicleChatbot:
         if NLP_AVAILABLE:
             try:
                 self.nlp_engine = NLPEngine()
-                print("✅ Advanced NLP engine loaded")
+                print("[NLP Engine] Advanced NLP engine loaded")
             except Exception as e:
-                print(f"⚠️ NLP engine failed to load: {e}")
+                print(f"[NLP Engine] NLP engine failed to load: {e}")
                 self.nlp_engine = None
         self.responses = {
             'greeting': [
