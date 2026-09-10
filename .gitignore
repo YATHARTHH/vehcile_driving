@@ -9,11 +9,23 @@ data/dataset7/*.csv
 # Database files
 trips.db
 *.db
+instance/
 
-# Python cache
+# Python cache & virtual environments
 __pycache__/
 *.pyc
 *.pyo
+.venv/
+venv/
+ENV/
+
+# Node.js
+frontend/node_modules/
+frontend/dist/
+node_modules/
+dist/
+.env
+.env.local
 
 # IDE files
 .vscode/
