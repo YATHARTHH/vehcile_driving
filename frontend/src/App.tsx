@@ -12,6 +12,7 @@ import { Dashboard } from './pages/Dashboard';
 import { TripDetailView } from './pages/TripDetail';
 import { RoutePlanner } from './pages/RoutePlanner';
 import { AiInsights } from './pages/AiInsights';
+import { ModelInfo } from './pages/ModelInfo';
 import { AiAssistant } from './pages/AiAssistant';
 
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -66,6 +67,7 @@ export const AppContent: React.FC = () => {
       <Route path="/trip/:tripId" element={<ProtectedLayout><TripDetailView /></ProtectedLayout>} />
       <Route path="/route-planner" element={<ProtectedLayout><RoutePlanner /></ProtectedLayout>} />
       <Route path="/ai-insights" element={<ProtectedLayout><AiInsights /></ProtectedLayout>} />
+      <Route path="/model-info" element={<ProtectedLayout><ModelInfo /></ProtectedLayout>} />
       <Route path="/ai-assistant" element={<ProtectedLayout><AiAssistant /></ProtectedLayout>} />
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

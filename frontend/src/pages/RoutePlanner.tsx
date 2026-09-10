@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { RouteOption } from '../types';
-import { Navigation, CheckCircle2 } from 'lucide-react';
+import { Navigation, CheckCircle2, Bookmark, X } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 
 const PRESET_LOCATIONS: { [key: string]: [number, number] } = {
@@ -20,6 +20,11 @@ export const RoutePlanner: React.FC = () => {
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState('');
+
+  // Saved Routes Drawer State
+  const [showSavedModal, setShowSavedModal] = useState(false);
+  const [savedRoutesList, setSavedRoutesList] = useState<any[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
 
   const handleOptimize = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,10 +62,27 @@ export const RoutePlanner: React.FC = () => {
         efficiency_score: route.efficiency_score
       });
       setSavedSuccess(`Route "${route.name}" saved to your profile!`);
+      fetchSavedRoutes();
     } catch (err) {
       console.error('Save route error', err);
     }
   };
+
+  const fetchSavedRoutes = async () => {
+    setLoadingSaved(true);
+    try {
+      const res = await api.get('/route/saved');
+      setSavedRoutesList(res.data);
+    } catch (err) {
+      console.error('Failed to fetch saved routes', err);
+    } finally {
+      setLoadingSaved(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSavedRoutes();
+  }, []);
 
   const startCoords = PRESET_LOCATIONS[startCity] || [19.0760, 72.8777];
   const endCoords = PRESET_LOCATIONS[endCity] || [18.5204, 73.8567];
@@ -72,11 +94,20 @@ export const RoutePlanner: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div className="glass-card p-6 rounded-3xl">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Smart Route Planner & Optimizer</h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Calculate fuel-efficient routes, elevation profiles, and real-time traffic delays
-        </p>
+      <div className="glass-card p-6 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Smart Route Planner & Optimizer</h1>
+          <p className="text-sm text-slate-400 mt-1">
+            Calculate fuel-efficient routes, elevation profiles, and real-time traffic delays
+          </p>
+        </div>
+        <button
+          onClick={() => { setShowSavedModal(true); fetchSavedRoutes(); }}
+          className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-dark-border transition-all flex items-center space-x-2"
+        >
+          <Bookmark className="w-4 h-4 text-brand-400" />
+          <span>Saved Routes ({savedRoutesList.length})</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -220,6 +251,46 @@ export const RoutePlanner: React.FC = () => {
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Saved Routes Modal */}
+      {showSavedModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-card p-6 rounded-3xl max-w-lg w-full border border-dark-border space-y-5 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-white text-lg flex items-center space-x-2">
+                <Bookmark className="w-5 h-5 text-brand-400" />
+                <span>Your Saved Routes</span>
+              </h3>
+              <button onClick={() => setShowSavedModal(false)} className="p-1 text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {loadingSaved ? (
+              <div className="text-center py-8 text-slate-400 text-xs">Loading saved routes...</div>
+            ) : savedRoutesList.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 text-xs italic">No saved routes found yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {savedRoutesList.map((sr: any) => (
+                  <div key={sr.id} className="p-4 rounded-2xl bg-dark-bg border border-dark-border space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-white text-sm">{sr.route_name}</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-brand-500/20 text-brand-300 font-bold uppercase">
+                        {sr.route_type}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-400">
+                      <span>{sr.start_location} ➔ {sr.end_location}</span>
+                      <span className="font-semibold text-emerald-400">{sr.distance_km} km • ₹{sr.fuel_cost}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

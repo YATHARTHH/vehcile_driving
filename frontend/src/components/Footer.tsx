@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car, Heart, Shield, Cpu } from 'lucide-react';
+import { Car, Shield, Cpu } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (

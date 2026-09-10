@@ -22,7 +22,7 @@ export const ForgotPassword: React.FC = () => {
       const res = await api.post('/auth/forgot-password', {
         username: username.trim(),
         vehicle_number: vehicleNumber.trim().toUpperCase(),
-        new_password: newPassword.strip ? newPassword.strip() : newPassword.trim()
+        new_password: newPassword.trim()
       });
 
       setSuccess(res.data.message || 'Password reset successful!');
