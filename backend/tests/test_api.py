@@ -1,19 +1,25 @@
+import time
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
 
-client = TestClient(app)
 
-def test_root_endpoint():
+@pytest.fixture(name="client")
+def client_fixture():
+    with TestClient(app) as c:
+        yield c
+
+
+def test_root_endpoint(client):
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
     assert "message" in data
     assert "version" in data
 
-def test_auth_trips_and_route_flow():
-    # 1. Register new user with valid vehicle number format (e.g. MH12AB1234)
-    import time
+
+def test_auth_trips_and_route_flow(client):
     username = f"testuser_{int(time.time())}"
     reg_payload = {
         "username": username,
@@ -29,19 +35,16 @@ def test_auth_trips_and_route_flow():
 
     headers = {"Authorization": f"Bearer {token}"}
 
-    # 2. Get me profile
     me_res = client.get("/api/v1/auth/me", headers=headers)
     assert me_res.status_code == 200
     me_data = me_res.json()
     assert me_data["username"] == username
 
-    # 3. Get trips
     trips_res = client.get("/api/v1/trips", headers=headers)
     assert trips_res.status_code == 200
     trips_data = trips_res.json()
     assert isinstance(trips_data, list)
 
-    # 4. Route Optimization API with auth header
     route_payload = {
         "start_coords": [19.0760, 72.8777],
         "end_coords": [18.5204, 73.8567],
@@ -54,7 +57,8 @@ def test_auth_trips_and_route_flow():
     assert "routes" in route_data
     assert len(route_data["routes"]) > 0
 
-def test_model_info():
+
+def test_model_info(client):
     res = client.get("/api/v1/insights/model-info")
     assert res.status_code == 200
     data = res.json()
