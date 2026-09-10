@@ -1,3 +1,4 @@
+import random
 import time
 import pytest
 from fastapi.testclient import TestClient
@@ -20,12 +21,16 @@ def test_root_endpoint(client):
 
 
 def test_auth_trips_and_route_flow(client):
-    username = f"testuser_{int(time.time())}"
+    unique_id = int(time.time())
+    rand_num = random.randint(1000, 9999)
+    username = f"testuser_{unique_id}_{rand_num}"
+    vehicle_num = f"MH12AB{rand_num}"
+
     reg_payload = {
         "username": username,
         "password": "Password123!",
         "email": f"{username}@example.com",
-        "vehicle_number": "MH12AB1234"
+        "vehicle_number": vehicle_num
     }
     reg_res = client.post("/api/v1/auth/register", json=reg_payload)
     assert reg_res.status_code in [200, 201]
