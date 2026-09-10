@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, Float, String, Text, ForeignKey, DateTime, func
+from sqlalchemy import Column, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
+
 from backend.database import Base
+
 
 class Trip(Base):
     __tablename__ = "trips"

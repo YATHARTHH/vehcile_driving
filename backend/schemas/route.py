@@ -1,25 +1,26 @@
-from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
+
+from pydantic import BaseModel
+
 
 class AlertResponse(BaseModel):
     id: int
     user_id: int
-    trip_id: Optional[int] = None
+    trip_id: int | None = None
     alert_type: str
     severity: str
     title: str
     message: str
     icon: str
-    timestamp: Optional[datetime] = None
+    timestamp: datetime | None = None
     resolved: bool = False
 
     class Config:
         from_attributes = True
 
 class RouteOptimizeRequest(BaseModel):
-    start_coords: List[float]
-    end_coords: List[float]
+    start_coords: list[float]
+    end_coords: list[float]
     priority: str = "balanced"
 
 class SavedRouteCreate(BaseModel):
@@ -36,7 +37,7 @@ class SavedRouteCreate(BaseModel):
 class SavedRouteResponse(SavedRouteCreate):
     id: int
     user_id: int
-    saved_date: Optional[datetime] = None
+    saved_date: datetime | None = None
 
     class Config:
         from_attributes = True

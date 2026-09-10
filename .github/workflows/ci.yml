@@ -12,10 +12,10 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------
-  # Job 1: Backend CI (FastAPI, Python, Linting, & Pytest Suite)
+  # Unified Production CI Pipeline (Backend, Security, & Frontend)
   # ---------------------------------------------------------------
-  backend-ci:
-    name: Backend CI (Python & FastAPI)
+  production-ci:
+    name: Production CI Pipeline
     runs-on: ubuntu-latest
 
     steps:
@@ -38,20 +38,13 @@ jobs:
         run: |
           ruff check backend/ --select E,F,W --ignore E501
 
+      - name: Security & AST Vulnerability Scan (Bandit)
+        run: |
+          bandit -r backend/ -ll -ii
+
       - name: Run Backend Integration & Unit Tests (Pytest)
         run: |
           python -m pytest backend/tests -v --cov=backend --cov-report=term-missing
-
-  # ---------------------------------------------------------------
-  # Job 2: Frontend CI (React 18, TypeScript, Typecheck, & Vite Build)
-  # ---------------------------------------------------------------
-  frontend-ci:
-    name: Frontend CI (React, TypeScript & Vite)
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
 
       - name: Set up Node.js 20.x
         uses: actions/setup-node@v4
@@ -74,24 +67,3 @@ jobs:
         run: |
           cd frontend
           npm run build
-
-  # ---------------------------------------------------------------
-  # Job 3: Security & Static Analysis Audit
-  # ---------------------------------------------------------------
-  security-audit:
-    name: Security & AST Vulnerability Audit
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Run Bandit Security Scanner
-        run: |
-          python -m pip install bandit
-          bandit -r backend/ -ll -ii

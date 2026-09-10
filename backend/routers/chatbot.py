@@ -1,26 +1,27 @@
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
 
 from backend.database import get_db
-from backend.models.user import User
 from backend.models.trip import Trip
+from backend.models.user import User
 from backend.utils.auth import get_current_user
 from chatbot.chatbot_logic import VehicleChatbot
 
 router = APIRouter(prefix="/chatbot", tags=["AI Chatbot Assistant"])
 chatbot_engine = VehicleChatbot()
 
+
 class ChatMessageQuery(BaseModel):
     message: str
-    conversation_id: Optional[str] = None
+    conversation_id: str | None = None
+
 
 @router.post("/query")
 async def chatbot_query(
-    payload: ChatMessageQuery, 
-    current_user: User = Depends(get_current_user), 
+    payload: ChatMessageQuery,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     msg = payload.message.strip()
@@ -41,7 +42,7 @@ async def chatbot_query(
     }
 
     bot_response = chatbot_engine.get_response(msg, user_data)
-    
+
     # Contextual suggestions
     suggestions = ["Analyze my driving patterns", "How can I improve fuel efficiency?", "Show me maintenance tips"]
     if "fuel" in msg.lower():
@@ -55,9 +56,10 @@ async def chatbot_query(
         "conversation_id": payload.conversation_id
     }
 
+
 @router.get("/suggestions")
 async def get_initial_suggestions(
-    current_user: User = Depends(get_current_user), 
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
@@ -82,6 +84,7 @@ async def get_initial_suggestions(
             "Show maintenance schedule"
         ]
     return {"suggestions": suggestions}
+
 
 @router.websocket("/ws")
 async def websocket_chatbot(websocket: WebSocket):

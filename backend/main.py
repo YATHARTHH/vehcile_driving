@@ -1,11 +1,13 @@
 import os
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from backend.config import settings
-from backend.database import engine, Base
-from backend.routers import auth, trips, insights, route, chatbot
+from backend.database import Base, engine
+from backend.routers import auth, chatbot, insights, route, trips
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -44,6 +46,7 @@ app.include_router(insights.router, prefix=settings.API_V1_STR)
 app.include_router(route.router, prefix=settings.API_V1_STR)
 app.include_router(chatbot.router, prefix=settings.API_V1_STR)
 
+
 @app.get("/")
 async def root():
     return {
@@ -52,6 +55,7 @@ async def root():
         "docs": "/docs"
     }
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)  # nosec B104

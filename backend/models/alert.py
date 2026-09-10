@@ -1,6 +1,17 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean, DateTime, func
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.orm import relationship
+
 from backend.database import Base
+
 
 class Alert(Base):
     __tablename__ = "alerts"

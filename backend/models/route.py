@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, Float, String, ForeignKey, DateTime, func
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
+
 from backend.database import Base
+
 
 class SavedRoute(Base):
     __tablename__ = "saved_routes"

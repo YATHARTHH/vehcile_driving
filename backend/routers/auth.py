@@ -1,15 +1,21 @@
 import re
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from pydantic import BaseModel
 
 from backend.database import get_db
-from backend.models.user import User
 from backend.models.trip import Trip
-from backend.schemas.user import UserCreate, UserResponse, TokenResponse
-from backend.utils.auth import hash_password, verify_password, create_access_token, get_current_user
+from backend.models.user import User
+from backend.schemas.user import TokenResponse, UserCreate, UserResponse
+from backend.utils.auth import (
+    create_access_token,
+    get_current_user,
+    hash_password,
+    verify_password,
+)
 from utils.data_generator import generate_random_trip_data
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])

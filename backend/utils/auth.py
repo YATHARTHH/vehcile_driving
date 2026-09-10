@@ -1,9 +1,9 @@
-import bcrypt
 from datetime import datetime, timedelta
-from typing import Optional
-from jose import JWTError, jwt
+
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -22,7 +22,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     pwd_bytes = plain_password.encode('utf-8')[:72]
     return bcrypt.checkpw(pwd_bytes, hashed_password.encode('utf-8'))
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})

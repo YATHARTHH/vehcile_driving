@@ -1,24 +1,26 @@
-import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from typing import List
 
 from backend.database import get_db
-from backend.models.user import User
 from backend.models.route import SavedRoute
-from backend.schemas.route import RouteOptimizeRequest, SavedRouteCreate, SavedRouteResponse
+from backend.models.user import User
+from backend.schemas.route import (
+    RouteOptimizeRequest,
+    SavedRouteCreate,
+    SavedRouteResponse,
+)
 from backend.utils.auth import get_current_user
-
 from route_optimization.route_engine import RouteOptimizer
 
 router = APIRouter(prefix="/route", tags=["Route Optimization"])
 optimizer = RouteOptimizer()
 
+
 @router.post("/optimize")
 async def optimize_route(
-    payload: RouteOptimizeRequest, 
-    current_user: User = Depends(get_current_user), 
+    payload: RouteOptimizeRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     if len(payload.start_coords) != 2 or len(payload.end_coords) != 2:
@@ -45,10 +47,11 @@ async def optimize_route(
         "recommendations": recommendations
     }
 
+
 @router.post("/save", response_model=SavedRouteResponse, status_code=status.HTTP_201_CREATED)
 async def save_route(
-    payload: SavedRouteCreate, 
-    current_user: User = Depends(get_current_user), 
+    payload: SavedRouteCreate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     saved_route = SavedRoute(
@@ -68,9 +71,10 @@ async def save_route(
     await db.refresh(saved_route)
     return saved_route
 
-@router.get("/saved", response_model=List[SavedRouteResponse])
+
+@router.get("/saved", response_model=list[SavedRouteResponse])
 async def get_saved_routes(
-    current_user: User = Depends(get_current_user), 
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(

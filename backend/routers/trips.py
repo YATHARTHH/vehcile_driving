@@ -1,16 +1,15 @@
 import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from typing import List
 
 from backend.database import get_db
-from backend.models.user import User
-from backend.models.trip import Trip
 from backend.models.alert import Alert
-from backend.schemas.trip import TripResponse, TripDetailResponse
+from backend.models.trip import Trip
+from backend.models.user import User
+from backend.schemas.trip import TripDetailResponse, TripResponse
 from backend.utils.auth import get_current_user
-
 from ml_model.driving_logic import calculate_driving_score
 from ml_model.maintenance_logic import build_alerts, get_health_recommendation
 
@@ -26,10 +25,11 @@ except Exception as e:
 
 router = APIRouter(prefix="/trips", tags=["Trips Telemetry"])
 
-@router.get("", response_model=List[TripResponse])
+
+@router.get("", response_model=list[TripResponse])
 async def get_user_trips(
-    limit: int = 15, 
-    current_user: User = Depends(get_current_user), 
+    limit: int = 15,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
@@ -41,10 +41,11 @@ async def get_user_trips(
     trips = result.scalars().all()
     return trips
 
+
 @router.get("/{trip_id}", response_model=TripDetailResponse)
 async def get_trip_detail(
-    trip_id: int, 
-    current_user: User = Depends(get_current_user), 
+    trip_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     # IDOR Security Protection: Query filtered explicitly by user_id
@@ -55,7 +56,7 @@ async def get_trip_detail(
 
     if not trip:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Trip record not found or access denied."
         )
 
@@ -99,7 +100,7 @@ async def get_trip_detail(
 
     # Maintenance alerts
     alerts_list, health_rec = build_alerts(trip_dict)
-    
+
     # Save alerts to DB asynchronously if any
     for alert_item in alerts_list:
         alert_entry = Alert(

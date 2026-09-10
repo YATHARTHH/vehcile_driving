@@ -1,31 +1,36 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from pydantic import BaseModel
-from typing import Dict, Any, Optional
-
-from backend.database import get_db
-from backend.models.user import User
-from backend.models.trip import Trip
-from backend.utils.auth import get_current_user
 
 from ai_insights import (
-    analyze_trip_sentiment, detect_anomalies, predict_maintenance,
-    generate_recommendations, predict_fuel_consumption
+    analyze_trip_sentiment,
+    detect_anomalies,
+    predict_fuel_consumption,
+    predict_maintenance,
 )
+from backend.database import get_db
+from backend.models.trip import Trip
+from backend.models.user import User
+from backend.utils.auth import get_current_user
 
 router = APIRouter(prefix="/insights", tags=["AI Insights & Analytics"])
+
 
 class TripIdRequest(BaseModel):
     trip_id: int
 
+
 class FuelPredictionRequest(BaseModel):
-    route_data: Dict[str, Any]
+    route_data: dict[str, Any]
+
 
 @router.post("/sentiment")
 async def get_trip_sentiment(
-    payload: TripIdRequest, 
-    current_user: User = Depends(get_current_user), 
+    payload: TripIdRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
@@ -34,15 +39,16 @@ async def get_trip_sentiment(
     trip = result.scalars().first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip record not found")
-    
+
     trip_dict = {column.name: getattr(trip, column.name) for column in trip.__table__.columns}
     sentiment = analyze_trip_sentiment(trip_dict)
     return {"success": True, "sentiment": sentiment}
 
+
 @router.post("/anomaly-detection")
 async def get_anomaly_detection(
-    payload: TripIdRequest, 
-    current_user: User = Depends(get_current_user), 
+    payload: TripIdRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     # Fetch Target Trip
@@ -65,9 +71,10 @@ async def get_anomaly_detection(
     anomaly_result = detect_anomalies(trip_dict, history_list)
     return {"success": True, "anomalies": anomaly_result}
 
+
 @router.get("/predictive-maintenance")
 async def get_predictive_maintenance(
-    current_user: User = Depends(get_current_user), 
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     recent_res = await db.execute(
@@ -89,6 +96,7 @@ async def get_predictive_maintenance(
     maint_result = predict_maintenance(trip_dict, history_list)
     return {"success": True, "maintenance": maint_result}
 
+
 @router.get("/model-info")
 async def get_model_info():
     try:
@@ -100,10 +108,11 @@ async def get_model_info():
     except Exception as e:
         return {"success": False, "model_loaded": False, "error": str(e)}
 
+
 @router.post("/fuel-prediction")
 async def get_fuel_prediction(
-    payload: FuelPredictionRequest, 
-    current_user: User = Depends(get_current_user), 
+    payload: FuelPredictionRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     history_res = await db.execute(

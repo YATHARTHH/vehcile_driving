@@ -1,8 +1,9 @@
+
 from pydantic import BaseModel
-from typing import Optional
+
 
 class TripBase(BaseModel):
-    trip_date: Optional[str] = None
+    trip_date: str | None = None
     distance_km: float = 0.0
     avg_speed_kmph: float = 0.0
     max_speed: float = 0.0
@@ -11,7 +12,7 @@ class TripBase(BaseModel):
     brake_events: int = 0
     steering_angle: float = 0.0
     angular_velocity: float = 0.0
-    gps_path: Optional[str] = None
+    gps_path: str | None = None
     acceleration: float = 0.0
     gear_position: int = 1
     tire_pressure: float = 32.0
@@ -19,8 +20,8 @@ class TripBase(BaseModel):
     throttle_position: float = 0.0
     brake_pressure: float = 0.0
     trip_duration: float = 0.0
-    start_location: Optional[str] = None
-    end_location: Optional[str] = None
+    start_location: str | None = None
+    end_location: str | None = None
 
 class TripCreate(TripBase):
     pass

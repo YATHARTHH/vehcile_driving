@@ -1,12 +1,13 @@
-from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import datetime
+
+from pydantic import BaseModel, Field
+
 
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=6)
     vehicle_number: str = Field(..., min_length=6, max_length=20)
-    email: Optional[str] = None
+    email: str | None = None
 
 class UserLogin(BaseModel):
     username: str
@@ -16,8 +17,8 @@ class UserResponse(BaseModel):
     id: int
     username: str
     vehicle_number: str
-    email: Optional[str] = None
-    created_at: Optional[datetime] = None
+    email: str | None = None
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True
