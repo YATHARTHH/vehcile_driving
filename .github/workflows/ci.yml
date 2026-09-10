@@ -1,0 +1,97 @@
+name: Production CI Pipeline
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------
+  # Job 1: Backend CI (FastAPI, Python, Linting, & Pytest Suite)
+  # ---------------------------------------------------------------
+  backend-ci:
+    name: Backend CI (Python & FastAPI)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov httpx ruff bandit
+
+      - name: Code Quality & Syntax Check (Ruff)
+        run: |
+          ruff check backend/ --select E,F,W --ignore E501
+
+      - name: Run Backend Integration & Unit Tests (Pytest)
+        run: |
+          python -m pytest backend/tests -v --cov=backend --cov-report=term-missing
+
+  # ---------------------------------------------------------------
+  # Job 2: Frontend CI (React 18, TypeScript, Typecheck, & Vite Build)
+  # ---------------------------------------------------------------
+  frontend-ci:
+    name: Frontend CI (React, TypeScript & Vite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Node Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run TypeScript Type Check
+        run: |
+          cd frontend
+          npx tsc --noEmit
+
+      - name: Build Production Bundle (Vite)
+        run: |
+          cd frontend
+          npm run build
+
+  # ---------------------------------------------------------------
+  # Job 3: Security & Static Analysis Audit
+  # ---------------------------------------------------------------
+  security-audit:
+    name: Security & AST Vulnerability Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Bandit Security Scanner
+        run: |
+          python -m pip install bandit
+          bandit -r backend/ -ll -ii
