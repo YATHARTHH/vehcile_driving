@@ -3,22 +3,41 @@ import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { Trip } from '../types';
 import { 
-  Gauge, Navigation, Zap, Fuel, Activity, ArrowUpRight, Search, Download, FileText, 
-  CheckSquare, Square, X, BarChart2 
+  Gauge, Navigation, Fuel, Activity, ArrowUpRight, Search, Download, FileText, 
+  CheckSquare, Square, X, BarChart2, Filter, CalendarCheck, MoreVertical
 } from 'lucide-react';
 import { 
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line 
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line,
+  BarChart, Bar, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis
 } from 'recharts';
+
+const COLOR_PALETTE = [
+  '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6',
+  '#ec4899', '#14b8a6', '#6366f1', '#ef4444',
+  '#0ea5e9', '#a855f7'
+];
 
 export const Dashboard: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modals State
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [timeFilter, setTimeFilter] = useState('all');
 
   // Multi-Select Trip Comparison State
   const [selectedTripIds, setSelectedTripIds] = useState<number[]>([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
+
+  // Advanced Filter Inputs State
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterMinDist, setFilterMinDist] = useState('');
+  const [filterMaxDist, setFilterMaxDist] = useState('');
+  const [filterMinSpeed, setFilterMinSpeed] = useState('');
+  const [filterMaxSpeed, setFilterMaxSpeed] = useState('');
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -34,12 +53,41 @@ export const Dashboard: React.FC = () => {
     fetchTrips();
   }, []);
 
-  // Filtered trips by search term
-  const filteredTrips = trips.filter(t => 
-    (t.trip_date && t.trip_date.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (t.start_location && t.start_location.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (t.end_location && t.end_location.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filtered trips by Search Term & Advanced Filters
+  const filteredTrips = trips.filter(t => {
+    // Search term check
+    const matchesSearch = 
+      (t.trip_date && t.trip_date.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (t.start_location && t.start_location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (t.end_location && t.end_location.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    if (!matchesSearch) return false;
+
+    // Date range filter
+    if (filterDateFrom && t.trip_date && t.trip_date < filterDateFrom) return false;
+    if (filterDateTo && t.trip_date && t.trip_date > filterDateTo) return false;
+
+    // Distance filter
+    if (filterMinDist && t.distance_km < Number(filterMinDist)) return false;
+    if (filterMaxDist && t.distance_km > Number(filterMaxDist)) return false;
+
+    // Speed filter
+    if (filterMinSpeed && t.avg_speed_kmph < Number(filterMinSpeed)) return false;
+    if (filterMaxSpeed && t.avg_speed_kmph > Number(filterMaxSpeed)) return false;
+
+    return true;
+  });
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setFilterMinDist('');
+    setFilterMaxDist('');
+    setFilterMinSpeed('');
+    setFilterMaxSpeed('');
+    setShowFilterModal(false);
+  };
 
   // Toggle trip selection for comparison
   const toggleSelectTrip = (id: number) => {
@@ -60,33 +108,49 @@ export const Dashboard: React.FC = () => {
   const totalDistance = trips.reduce((sum, t) => sum + (t.distance_km || 0), 0);
   const avgSpeed = trips.length > 0 ? (trips.reduce((sum, t) => sum + (t.avg_speed_kmph || 0), 0) / trips.length).toFixed(1) : '0';
   const totalFuel = trips.reduce((sum, t) => sum + (t.fuel_consumed || 0), 0);
-  const avgEfficiency = totalFuel > 0 ? (totalDistance / totalFuel).toFixed(1) : '0';
-  const peakRpm = trips.length > 0 ? Math.max(...trips.map(t => t.max_rpm || 0)) : 0;
+  const totalTripsCount = trips.length;
 
   // Selected trips for comparison
   const selectedTrips = trips.filter(t => selectedTripIds.includes(t.id));
 
-  // Chart Data Preparation (Reverse chronologically for left-to-right timeline)
-  const chartData = [...trips].reverse().map((t, idx) => ({
+  // Chart Data Preparation (Chronological for left-to-right timeline)
+  const chartData = [...filteredTrips].reverse().map((t, idx) => ({
     name: t.trip_date || `Trip #${idx + 1}`,
-    speed: t.avg_speed_kmph,
-    rpm: t.max_rpm,
+    distance: t.distance_km,
+    avgSpeed: t.avg_speed_kmph,
+    maxSpeed: t.max_speed,
     fuel: t.fuel_consumed,
-    distance: t.distance_km
+    rpm: t.max_rpm,
+    steering: t.steering_angle,
+    brakeEvents: t.brake_events,
+    angularVelocity: t.angular_velocity,
+    acceleration: t.acceleration,
+    gear: t.gear_position,
+    tirePressure: t.tire_pressure || 32,
+    engineLoad: t.engine_load || 45,
+    throttle: t.throttle_position || 50,
+    brakePressure: t.brake_pressure || 20,
+    duration: t.trip_duration || 30,
+    fuelEfficiency: t.fuel_consumed > 0 ? Number((t.distance_km / t.fuel_consumed).toFixed(2)) : 0,
+    scatterX: idx
   }));
 
   // CSV Export Functionality
   const exportCSV = () => {
     const headers = [
-      'ID', 'Trip Date', 'Distance (km)', 'Avg Speed (km/h)', 'Max Speed (km/h)', 
-      'Max RPM', 'Fuel Consumed (L)', 'Brake Events', 'Tire Pressure (psi)', 
-      'Engine Load (%)', 'Trip Duration (min)'
+      'Trip Date', 'Distance (km)', 'Avg Speed (km/h)', 'Max Speed (km/h)', 'Max RPM', 
+      'Fuel Consumed (L)', 'Brake Events', 'Steering Angle', 'Angular Velocity', 
+      'Acceleration', 'Gear Position', 'Tire Pressure (psi)', 'Engine Load (%)', 
+      'Throttle Position (%)', 'Brake Pressure (psi)', 'Trip Duration (min)', 
+      'Start Location', 'End Location'
     ];
 
     const rows = filteredTrips.map(t => [
-      t.id, t.trip_date, t.distance_km, t.avg_speed_kmph, t.max_speed,
-      t.max_rpm, t.fuel_consumed, t.brake_events, t.tire_pressure,
-      t.engine_load, t.trip_duration
+      t.trip_date, t.distance_km, t.avg_speed_kmph, t.max_speed, t.max_rpm,
+      t.fuel_consumed, t.brake_events, t.steering_angle, t.angular_velocity,
+      t.acceleration, t.gear_position, t.tire_pressure, t.engine_load,
+      t.throttle_position, t.brake_pressure, t.trip_duration,
+      `"${t.start_location || ''}"`, `"${t.end_location || ''}"`
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' 
@@ -95,7 +159,7 @@ export const Dashboard: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ecodriving_trips_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `vehicle_trips_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -109,7 +173,7 @@ export const Dashboard: React.FC = () => {
     )}`;
     const link = document.createElement('a');
     link.setAttribute('href', jsonString);
-    link.setAttribute('download', `ecodriving_trips_${new Date().toISOString().slice(0, 10)}.json`);
+    link.setAttribute('download', `vehicle_trips_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -121,162 +185,85 @@ export const Dashboard: React.FC = () => {
       <div className="flex items-center justify-center min-h-[500px]">
         <div className="flex flex-col items-center space-y-3">
           <div className="w-10 h-10 border-4 border-brand-500/30 border-t-brand-500 rounded-full animate-spin"></div>
-          <span className="text-sm font-medium text-slate-400">Loading Telematics Data...</span>
+          <span className="text-sm font-medium text-slate-400">Loading Telematics & Analytics Dashboard...</span>
         </div>
       </div>
     );
   }
 
+  const maxEngineLoad = chartData.length > 0 ? Math.max(...chartData.map(d => d.engineLoad)) : 86.8;
+
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-6 rounded-3xl border border-brand-500/20">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Telematics Dashboard</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Real-time driving scores, fuel telemetry, and vehicle health metrics
-          </p>
-        </div>
+    <div className="space-y-8 pb-12">
+      {/* Welcome Title */}
+      <div className="glass-card p-6 rounded-3xl border border-brand-500/20">
         <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setShowExportModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm border border-dark-border transition-all flex items-center space-x-2"
-          >
-            <Download className="w-4 h-4 text-brand-400" />
-            <span>Export Data</span>
-          </button>
-          <Link
-            to="/route-planner"
-            className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium text-sm transition-all shadow-md glow-brand flex items-center space-x-2"
-          >
-            <Navigation className="w-4 h-4" />
-            <span>Plan Route</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-card p-5 rounded-2xl">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Distance</span>
-            <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-              <Navigation className="w-5 h-5" />
-            </div>
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center glow-brand text-white">
+            <Gauge className="w-7 h-7" />
           </div>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-3xl font-bold text-white">{totalDistance.toFixed(1)}</span>
-            <span className="text-sm text-slate-400">km</span>
-          </div>
-        </div>
-
-        <div className="glass-card p-5 rounded-2xl">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Avg Speed</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <Gauge className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-3xl font-bold text-white">{avgSpeed}</span>
-            <span className="text-sm text-slate-400">km/h</span>
-          </div>
-        </div>
-
-        <div className="glass-card p-5 rounded-2xl">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fuel Efficiency</span>
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-              <Fuel className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-3xl font-bold text-white">{avgEfficiency}</span>
-            <span className="text-sm text-slate-400">km/L</span>
-          </div>
-        </div>
-
-        <div className="glass-card p-5 rounded-2xl">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Peak RPM</span>
-            <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
-              <Zap className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-3xl font-bold text-white">{peakRpm}</span>
-            <span className="text-sm text-slate-400">RPM</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Telemetry Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Speed vs RPM Chart */}
-        <div className="glass-card p-6 rounded-3xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="font-bold text-slate-100 text-lg">Speed & Engine Load Dynamics</h3>
-              <p className="text-xs text-slate-400">Average Speed (km/h) vs Engine Max RPM over recent trips</p>
-            </div>
-            <Activity className="w-5 h-5 text-brand-400" />
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="speedGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} 
-                />
-                <Area type="monotone" dataKey="speed" stroke="#10b981" fillOpacity={1} fill="url(#speedGrad)" name="Avg Speed (km/h)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Distance vs Fuel Chart */}
-        <div className="glass-card p-6 rounded-3xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="font-bold text-slate-100 text-lg">Fuel Consumption Analysis</h3>
-              <p className="text-xs text-slate-400">Trip Distance (km) vs Fuel Consumed (L)</p>
-            </div>
-            <Fuel className="w-5 h-5 text-amber-400" />
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} 
-                />
-                <Line type="monotone" dataKey="distance" stroke="#3b82f6" strokeWidth={2} name="Distance (km)" />
-                <Line type="monotone" dataKey="fuel" stroke="#f59e0b" strokeWidth={2} name="Fuel (L)" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Trips Table with Search Filter, Checkboxes, & Comparison Action */}
-      <div className="glass-card p-6 rounded-3xl overflow-hidden space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="font-bold text-slate-100 text-lg">Recent Trip Records</h3>
-            <span className="text-xs text-slate-400 font-mono">Showing {filteredTrips.length} of {trips.length} trips</span>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Vehicle Trip Analytics Dashboard</h1>
+            <p className="text-sm text-slate-400 mt-0.5">
+              Track and analyze your vehicle performance metrics, sensor telematics, and driving scores
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 4 Main Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="glass-card p-5 rounded-2xl flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+            <Navigation className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Distance</span>
+            <span className="text-2xl font-extrabold text-white">{totalDistance.toFixed(1)} km</span>
+          </div>
+        </div>
+
+        <div className="glass-card p-5 rounded-2xl flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+            <Gauge className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Avg Speed</span>
+            <span className="text-2xl font-extrabold text-white">{avgSpeed} km/h</span>
+          </div>
+        </div>
+
+        <div className="glass-card p-5 rounded-2xl flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+            <Fuel className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Fuel</span>
+            <span className="text-2xl font-extrabold text-white">{totalFuel.toFixed(1)} L</span>
+          </div>
+        </div>
+
+        <div className="glass-card p-5 rounded-2xl flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+            <CalendarCheck className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Trips</span>
+            <span className="text-2xl font-extrabold text-white">{totalTripsCount}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Trip Summary Section */}
+      <div className="glass-card p-6 rounded-3xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-white tracking-tight">Recent Trip Summary</h2>
+            <p className="text-xs text-slate-400 font-mono mt-0.5">
+              Showing {filteredTrips.length} of {trips.length} trip records
+            </p>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-3">
             {selectedTripIds.length >= 2 && (
               <button
                 onClick={() => setShowCompareModal(true)}
@@ -287,25 +274,42 @@ export const Dashboard: React.FC = () => {
               </button>
             )}
 
-            {/* Search Box */}
-            <div className="relative min-w-[220px]">
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-dark-border transition-all flex items-center space-x-2"
+            >
+              <Download className="w-4 h-4 text-brand-400" />
+              <span>Export</span>
+            </button>
+
+            <button
+              onClick={() => setShowFilterModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-dark-border transition-all flex items-center space-x-2"
+            >
+              <Filter className="w-4 h-4 text-amber-400" />
+              <span>Filter</span>
+            </button>
+
+            {/* Quick Search */}
+            <div className="relative min-w-[200px]">
               <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-500" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by date or location..."
+                placeholder="Search location/date..."
                 className="w-full bg-slate-900/80 border border-dark-border rounded-xl pl-9 pr-4 py-2 text-slate-200 text-xs focus:outline-none focus:border-brand-500"
               />
             </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        {/* Complete 16-Column Telemetry Table */}
+        <div className="overflow-x-auto border border-dark-border rounded-2xl">
+          <table className="w-full text-left border-collapse min-w-[1400px]">
             <thead>
-              <tr className="border-b border-dark-border text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                <th className="py-3 px-3 w-10 text-center">
+              <tr className="bg-slate-900/90 border-b border-dark-border text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                <th className="py-3.5 px-3 w-10 text-center">
                   <button onClick={selectAllFiltered} className="text-slate-400 hover:text-white">
                     {selectedTripIds.length === filteredTrips.length && filteredTrips.length > 0 ? (
                       <CheckSquare className="w-4 h-4 text-brand-400" />
@@ -314,21 +318,31 @@ export const Dashboard: React.FC = () => {
                     )}
                   </button>
                 </th>
-                <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">Distance</th>
-                <th className="py-3 px-4">Avg Speed</th>
-                <th className="py-3 px-4">Max RPM</th>
-                <th className="py-3 px-4">Fuel Consumed</th>
-                <th className="py-3 px-4">Brake Events</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-3.5 px-4">Trip Date</th>
+                <th className="py-3.5 px-4">Distance</th>
+                <th className="py-3.5 px-4">Avg Speed</th>
+                <th className="py-3.5 px-4">Max Speed</th>
+                <th className="py-3.5 px-4">Max RPM</th>
+                <th className="py-3.5 px-4">Fuel</th>
+                <th className="py-3.5 px-4">Brake Events</th>
+                <th className="py-3.5 px-4">Steering Angle</th>
+                <th className="py-3.5 px-4">Angular Vel</th>
+                <th className="py-3.5 px-4">Acceleration</th>
+                <th className="py-3.5 px-4">Gear</th>
+                <th className="py-3.5 px-4">Tire Pressure</th>
+                <th className="py-3.5 px-4">Engine Load</th>
+                <th className="py-3.5 px-4">Throttle Pos</th>
+                <th className="py-3.5 px-4">Brake Press</th>
+                <th className="py-3.5 px-4">Duration</th>
+                <th className="py-3.5 px-4 text-right">View</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-dark-border text-sm font-medium">
+            <tbody className="divide-y divide-dark-border text-xs font-medium">
               {filteredTrips.map((t) => {
                 const isSelected = selectedTripIds.includes(t.id);
                 return (
                   <tr key={t.id} className={`transition-colors ${isSelected ? 'bg-purple-500/10' : 'hover:bg-dark-hover/60'}`}>
-                    <td className="py-3.5 px-3 text-center">
+                    <td className="py-3 px-3 text-center">
                       <button onClick={() => toggleSelectTrip(t.id)} className="text-slate-400 hover:text-white">
                         {isSelected ? (
                           <CheckSquare className="w-4 h-4 text-purple-400" />
@@ -337,24 +351,34 @@ export const Dashboard: React.FC = () => {
                         )}
                       </button>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-300">{t.trip_date || 'N/A'}</td>
-                    <td className="py-3.5 px-4 text-slate-200">{t.distance_km} km</td>
-                    <td className="py-3.5 px-4 text-slate-200">{t.avg_speed_kmph} km/h</td>
-                    <td className="py-3.5 px-4 text-slate-200">{t.max_rpm} RPM</td>
-                    <td className="py-3.5 px-4 text-slate-200">{t.fuel_consumed} L</td>
-                    <td className="py-3.5 px-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                        t.brake_events > 10 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    <td className="py-3 px-4 text-white font-semibold">{t.trip_date || 'N/A'}</td>
+                    <td className="py-3 px-4 text-slate-200">{t.distance_km} km</td>
+                    <td className="py-3 px-4 text-slate-200">{t.avg_speed_kmph} km/h</td>
+                    <td className="py-3 px-4 text-slate-200">{t.max_speed} km/h</td>
+                    <td className="py-3 px-4 font-mono text-purple-300">{t.max_rpm}</td>
+                    <td className="py-3 px-4 text-amber-300 font-semibold">{t.fuel_consumed} L</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+                        t.brake_events > 8 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                       }`}>
-                        {t.brake_events} events
+                        {t.brake_events}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-3 px-4 text-slate-300">{t.steering_angle}°</td>
+                    <td className="py-3 px-4 text-slate-300">{t.angular_velocity}</td>
+                    <td className="py-3 px-4 text-slate-300">{t.acceleration} m/s²</td>
+                    <td className="py-3 px-4 text-slate-300">Gear {t.gear_position}</td>
+                    <td className="py-3 px-4 text-slate-300">{t.tire_pressure || 32} psi</td>
+                    <td className="py-3 px-4 text-slate-300">{t.engine_load || 45}%</td>
+                    <td className="py-3 px-4 text-slate-300">{t.throttle_position || 50}%</td>
+                    <td className="py-3 px-4 text-slate-300">{t.brake_pressure || 20} psi</td>
+                    <td className="py-3 px-4 text-slate-300">{t.trip_duration || 30} min</td>
+                    <td className="py-3 px-4 text-right">
                       <Link
                         to={`/trip/${t.id}`}
-                        className="inline-flex items-center space-x-1 text-xs font-semibold text-brand-400 hover:text-brand-300 transition-colors"
+                        className="inline-flex items-center space-x-1 font-semibold text-brand-400 hover:text-brand-300 transition-colors"
                       >
-                        <span>Analyze</span>
+                        <span>Details</span>
                         <ArrowUpRight className="w-3.5 h-3.5" />
                       </Link>
                     </td>
@@ -365,6 +389,491 @@ export const Dashboard: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Trip Performance Analytics Section (16 Visualizations Grid) */}
+      <div className="glass-card p-6 rounded-3xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-dark-border pb-4">
+          <div>
+            <h2 className="text-xl font-bold text-white tracking-tight">Trip Performance Analytics</h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              16 Telematics Sensor Visualization Channels
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              className="bg-slate-900 border border-dark-border rounded-xl px-3.5 py-2 text-slate-200 text-xs font-semibold focus:outline-none focus:border-brand-500"
+            >
+              <option value="all">All Time</option>
+              <option value="month">Last Month</option>
+              <option value="week">Last Week</option>
+            </select>
+          </div>
+        </div>
+
+        {/* 16 Charts Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {/* 1. Distance Covered (km) */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Distance Covered (km)</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Bar dataKey="distance" fill="#3b82f6" radius={[6, 6, 0, 0]} name="Distance (km)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 2. Average Speed (km/h) */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Average Speed (km/h)</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="avgSpeedGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Area type="monotone" dataKey="avgSpeed" stroke="#10b981" fill="url(#avgSpeedGrad)" strokeWidth={2} name="Avg Speed (km/h)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 3. Maximum Speed (km/h) */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Maximum Speed (km/h)</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="maxSpeedGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Area type="monotone" dataKey="maxSpeed" stroke="#f43f5e" fill="url(#maxSpeedGrad)" strokeWidth={2} name="Max Speed (km/h)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 4. Fuel Consumption Analysis (Pie/Doughnut) */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Fuel Consumption Analysis</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    dataKey="fuel"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={75}
+                    paddingAngle={3}
+                  >
+                    {chartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLOR_PALETTE[index % COLOR_PALETTE.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 5. Max RPM per Trip */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Max RPM per Trip</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Bar dataKey="rpm" fill="#8b5cf6" radius={[6, 6, 0, 0]} name="Max RPM" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 6. Steering Angle Trend */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Steering Angle Trend</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="steeringGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Area type="monotone" dataKey="steering" stroke="#f59e0b" fill="url(#steeringGrad)" strokeWidth={2} name="Steering (°)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 7. Brake Events (Scatter/Bubble) */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Brake Events</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis dataKey="brakeEvents" stroke="#64748b" fontSize={10} name="Events" />
+                  <ZAxis range={[100, 400]} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Scatter data={chartData} fill="#f43f5e" name="Brake Events" />
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 8. Angular Velocity */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Angular Velocity</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    dataKey="angularVelocity"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={75}
+                  >
+                    {chartData.map((_, index) => (
+                      <Cell key={`cell-ang-${index}`} fill={COLOR_PALETTE[(index + 3) % COLOR_PALETTE.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 9. Acceleration */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Acceleration</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="accelGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Area type="monotone" dataKey="acceleration" stroke="#0ea5e9" fill="url(#accelGrad)" strokeWidth={2} name="Accel (m/s²)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 10. Gear Position */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Gear Position</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis dataKey="gear" domain={[0, 6]} stroke="#64748b" fontSize={10} name="Gear" />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Scatter data={chartData} fill="#14b8a6" name="Gear Position" />
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 11. Tire Pressure */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Tire Pressure (PSI)</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis type="number" domain={[20, 40]} stroke="#64748b" fontSize={10} />
+                  <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Bar dataKey="tirePressure" fill="#a855f7" radius={[0, 6, 6, 0]} name="PSI" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 12. Engine Load */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Engine Load</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52 flex flex-col items-center justify-center relative">
+              <div className="text-4xl font-extrabold text-amber-400 font-mono">{maxEngineLoad}%</div>
+              <span className="text-xs text-slate-400 mt-1">Max Engine Load</span>
+              <div className="w-3/4 bg-slate-800 h-3 rounded-full overflow-hidden mt-4">
+                <div className="bg-amber-500 h-full transition-all" style={{ width: `${maxEngineLoad}%` }}></div>
+              </div>
+            </div>
+          </div>
+
+          {/* 13. Throttle Position */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Throttle Position (%)</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis domain={[0, 100]} stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Line type="step" dataKey="throttle" stroke="#ec4899" strokeWidth={2} name="Throttle (%)" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 14. Brake Pressure */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Brake Pressure (PSI)</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="brakePressGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Area type="monotone" dataKey="brakePressure" stroke="#ef4444" fill="url(#brakePressGrad)" strokeWidth={2} name="Brake (PSI)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 15. Trip Duration */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Trip Duration (min)</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Bar dataKey="duration" fill="#14b8a6" radius={[6, 6, 0, 0]} name="Duration (min)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 16. Fuel Efficiency */}
+          <div className="glass-card p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-white text-sm">Fuel Efficiency (km/L)</span>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="effGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#121824', borderColor: '#1f293d', borderRadius: '12px', color: '#fff' }} />
+                  <Area type="monotone" dataKey="fuelEfficiency" stroke="#10b981" fill="url(#effGrad)" strokeWidth={2} name="km/L" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Filter Modal */}
+      {showFilterModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-card p-6 rounded-3xl max-w-md w-full border border-dark-border space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-white text-lg flex items-center space-x-2">
+                <Filter className="w-5 h-5 text-amber-400" />
+                <span>Filter Trip Records</span>
+              </h3>
+              <button onClick={() => setShowFilterModal(false)} className="p-1 text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase block mb-1">Date From</label>
+                  <input
+                    type="date"
+                    value={filterDateFrom}
+                    onChange={(e) => setFilterDateFrom(e.target.value)}
+                    className="w-full bg-slate-900 border border-dark-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase block mb-1">Date To</label>
+                  <input
+                    type="date"
+                    value={filterDateTo}
+                    onChange={(e) => setFilterDateTo(e.target.value)}
+                    className="w-full bg-slate-900 border border-dark-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase block mb-1">Min Distance (km)</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={filterMinDist}
+                    onChange={(e) => setFilterMinDist(e.target.value)}
+                    className="w-full bg-slate-900 border border-dark-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase block mb-1">Max Distance (km)</label>
+                  <input
+                    type="number"
+                    placeholder="Any"
+                    value={filterMaxDist}
+                    onChange={(e) => setFilterMaxDist(e.target.value)}
+                    className="w-full bg-slate-900 border border-dark-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase block mb-1">Min Avg Speed (km/h)</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={filterMinSpeed}
+                    onChange={(e) => setFilterMinSpeed(e.target.value)}
+                    className="w-full bg-slate-900 border border-dark-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase block mb-1">Max Avg Speed (km/h)</label>
+                  <input
+                    type="number"
+                    placeholder="Any"
+                    value={filterMaxSpeed}
+                    onChange={(e) => setFilterMaxSpeed(e.target.value)}
+                    className="w-full bg-slate-900 border border-dark-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 pt-2">
+              <button
+                onClick={resetFilters}
+                className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors"
+              >
+                Reset Filters
+              </button>
+              <button
+                onClick={() => setShowFilterModal(false)}
+                className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-md glow-brand transition-colors"
+              >
+                Apply Filter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Trip Comparison Modal */}
       {showCompareModal && (
