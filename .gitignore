@@ -7,8 +7,13 @@ data/dataset6/*.csv
 data/dataset7/*.csv
 
 # Database files
-trips.db
 *.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-shm
+*.db-wal
+trips.db
 instance/
 
 # Python cache & virtual environments
