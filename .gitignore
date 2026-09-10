@@ -24,6 +24,7 @@ frontend/node_modules/
 frontend/dist/
 node_modules/
 dist/
+*.timestamp-*.mjs
 .env
 .env.local
 
