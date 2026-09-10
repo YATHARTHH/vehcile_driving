@@ -89,6 +89,17 @@ async def get_predictive_maintenance(
     maint_result = predict_maintenance(trip_dict, history_list)
     return {"success": True, "maintenance": maint_result}
 
+@router.get("/model-info")
+async def get_model_info():
+    try:
+        from ml_model.model_utils import get_model_summary
+        info = get_model_summary()
+        if not info:
+            return {"success": False, "model_loaded": False, "message": "ML model info not found"}
+        return {"success": True, "model_loaded": True, "model_info": info}
+    except Exception as e:
+        return {"success": False, "model_loaded": False, "error": str(e)}
+
 @router.post("/fuel-prediction")
 async def get_fuel_prediction(
     payload: FuelPredictionRequest, 
