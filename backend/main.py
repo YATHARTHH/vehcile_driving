@@ -13,7 +13,7 @@ async def lifespan(app: FastAPI):
     os.makedirs("instance", exist_ok=True)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    print("✅ Async SQLAlchemy Database connected and tables created.")
+    print("[Database] Async SQLAlchemy Database connected and tables created.")
     yield
     # Shutdown
     await engine.dispose()
