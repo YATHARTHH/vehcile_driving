@@ -5,6 +5,9 @@ data/dataset4/*.csv
 data/dataset5/*.csv
 data/dataset6/*.csv
 data/dataset7/*.csv
+data/lake/
+*.jsonl
+*.parquet
 
 # Database files
 *.db
