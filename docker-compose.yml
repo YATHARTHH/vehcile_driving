@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Event Broker & Schema Registry: Redpanda (Kafka-compatible, zero JVM)
+  # ----------------------------------------------------------------------------
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.10
+    container_name: fleettrack-redpanda
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 1G
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --check=false
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --schema-registry-addr 0.0.0.0:8081
+    ports:
+      - "9092:9092"
+      - "8081:8081"
+      - "9644:9644"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redpanda Web Console for local streaming visualization
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v2.4.3
+    container_name: fleettrack-redpanda-console
+    depends_on:
+      - redpanda
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_BROKERS: "redpanda:29092"
+      KAFKA_SCHEMAREGISTRY_URLS: "http://redpanda:8081"
+
+  # ----------------------------------------------------------------------------
+  # 2. Operational & Time-Series Database: TimescaleDB (PostgreSQL 16)
+  # ----------------------------------------------------------------------------
+  timescale:
+    image: timescale/timescaledb:latest-pg16
+    container_name: fleettrack-timescale
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: fleettrack_user
+      POSTGRES_PASSWORD: fleettrack_secure_dev_password_2026
+      POSTGRES_DB: fleettrack_telematics
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fleettrack_user -d fleettrack_telematics"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # 3. Hot Fleet State & Live Rate Limiting: Redis 7
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: fleettrack-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # 4. Object Storage / Medallion Data Lake: MinIO (S3-compatible)
+  # ----------------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: fleettrack-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadminpassword2026
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redpanda_data:
+  timescale_data:
+  redis_data:
+  minio_data:

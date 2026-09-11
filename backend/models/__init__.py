@@ -1,6 +1,17 @@
 from backend.models.alert import Alert
 from backend.models.route import SavedRoute
+from backend.models.telemetry import TelemetryEvent
+from backend.models.tenant import Fleet, Tenant, Vehicle
 from backend.models.trip import Trip
 from backend.models.user import User
 
-__all__ = ["Alert", "SavedRoute", "Trip", "User"]
+__all__ = [
+    "Alert",
+    "Fleet",
+    "SavedRoute",
+    "TelemetryEvent",
+    "Tenant",
+    "Trip",
+    "User",
+    "Vehicle",
+]
