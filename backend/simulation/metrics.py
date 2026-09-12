@@ -85,7 +85,7 @@ class SimulationMetrics:
 
         return f"""
 ================================================================================
-                    FLEETTRACK SIMULATION AUDIT REPORT                          
+                    FLEETTRACK SIMULATION AUDIT REPORT
 ================================================================================
 Scenario:               {scenario_name}
 Duration:               {duration_sec:.2f}s

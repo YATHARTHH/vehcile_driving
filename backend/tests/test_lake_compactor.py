@@ -2,6 +2,7 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
+
 from backend.streaming.lake_compactor import LakeCompactor
 
 
@@ -54,8 +55,7 @@ def test_lake_compactor_deduplication_and_partitioning():
         ]
 
         with open(bronze_file, "w", encoding="utf-8") as f:
-            for r in raw_events:
-                f.write(json.dumps(r) + "\n")
+            f.writelines(json.dumps(r) + "\n" for r in raw_events)
 
         # Run compaction job
         compactor = LakeCompactor(lake_root=str(lake_root))

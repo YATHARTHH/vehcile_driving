@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+
 from backend.streaming.watermark import PerVehicleWatermarkTracker
 
 

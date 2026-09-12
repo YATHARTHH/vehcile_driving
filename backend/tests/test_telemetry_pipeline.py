@@ -66,7 +66,7 @@ async def test_bronze_sink_persists_raw_before_validation():
         bronze_files = list(Path(temp_dir).rglob("raw_stream.jsonl"))
         assert len(bronze_files) >= 1, "Bronze raw_stream.jsonl must exist"
 
-        with open(bronze_files[0], "r", encoding="utf-8") as f:
+        with open(bronze_files[0], "r", encoding="utf-8") as f:  # noqa: ASYNC230
             content = f.read()
             assert "evt_corrupt_001" in content
             assert "-500.0" in content, "Corrupted sensor value must be preserved in raw Bronze forensics!"

@@ -1,4 +1,7 @@
-from backend.telematics.sensor_validator import DynamicSensorValidator, SensorQualityState
+from backend.telematics.sensor_validator import (
+    DynamicSensorValidator,
+    SensorQualityState,
+)
 
 
 def test_sensor_validator_valid_readings():
