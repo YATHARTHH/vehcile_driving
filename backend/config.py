@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
+    # Environment & Deployment Mode
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")  # "development", "test", "production"
+    AUTO_CREATE_DEV_TABLES: bool = os.getenv("AUTO_CREATE_DEV_TABLES", "false").lower() in ("true", "1")
+
     # Database Configuration (Dual-Mode: TimescaleDB / PostgreSQL with SQLite test fallback)
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",

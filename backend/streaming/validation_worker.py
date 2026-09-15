@@ -5,10 +5,12 @@ from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database import AsyncSessionLocal
-from backend.models.telemetry import TelemetryEvent
+from backend.models.telemetry import TelemetryEvent, TelemetryEventLedger
 from backend.models.tenant import Vehicle
 from backend.schemas.telemetry import DLQFailureCategory, DLQQuarantineEvent, ValidatedTelemetryEvent
 from backend.streaming.broker import EventBroker
@@ -104,23 +106,41 @@ class ValidationWorker:
             return {"status": "QUARANTINED_PERMANENT", "reasons": invalid_reasons}
 
         # ---------------------------------------------------------------------
-        # 2. Authoritative Database Idempotency & Conflict Check (P0-6)
+        # 2. Atomic Database Idempotency & Conflict Check
         # ---------------------------------------------------------------------
-        stmt = select(TelemetryEvent).where(
-            TelemetryEvent.tenant_id == tenant_id,
-            TelemetryEvent.vehicle_id == vehicle_id,
-            TelemetryEvent.event_id == event_id,
-        )
-        result = await db.execute(stmt)
-        existing_event = result.scalars().first()
+        bind = db.bind
+        dialect_name = bind.dialect.name if bind else "postgresql"
+        insert_fn = pg_insert if dialect_name == "postgresql" else sqlite_insert
 
-        if existing_event is not None:
-            if existing_event.payload_hash == incoming_hash:
-                # Benign network replay
+        ledger_stmt = (
+            insert_fn(TelemetryEventLedger)
+            .values(
+                tenant_id=tenant_id,
+                vehicle_id=vehicle_id,
+                event_id=event_id,
+                payload_hash=incoming_hash,
+                event_timestamp=event_time,
+                first_seen_at=datetime.now(timezone.utc),
+            )
+            .on_conflict_do_nothing(index_elements=["tenant_id", "vehicle_id", "event_id"])
+            .returning(TelemetryEventLedger.event_id)
+        )
+        res = await db.execute(ledger_stmt)
+        is_new_event = res.scalar_one_or_none() is not None
+
+        if not is_new_event:
+            # Query existing payload hash to distinguish benign replay from conflicting reuse
+            existing_hash = await db.scalar(
+                select(TelemetryEventLedger.payload_hash).where(
+                    TelemetryEventLedger.tenant_id == tenant_id,
+                    TelemetryEventLedger.vehicle_id == vehicle_id,
+                    TelemetryEventLedger.event_id == event_id,
+                )
+            )
+            if existing_hash == incoming_hash:
                 logger.info(f"[ValidationWorker] Duplicate replay detected for event {event_id} - safely ignored")
                 return {"status": "DUPLICATE_REPLAY", "event_id": event_id}
             else:
-                # Conflicting duplicate! Reused event ID with different data
                 logger.warning(f"[ValidationWorker] Conflict detected on event {event_id}: payload hash mismatch!")
                 dlq_event = DLQQuarantineEvent(
                     original_event_id=event_id,
@@ -129,10 +149,14 @@ class ValidationWorker:
                     failure_stage="IDEMPOTENCY_CONFLICT",
                     failure_category=DLQFailureCategory.CONFLICTING_EVENT,
                     error_code="CONFLICTING_EVENT_PAYLOAD",
-                    error_message=f"Event ID reused with conflicting hash (existing: {existing_event.payload_hash}, new: {incoming_hash})",
+                    error_message=f"Event ID reused with conflicting hash (existing: {existing_hash}, new: {incoming_hash})",
                     raw_payload=json.dumps(envelope),
                     schema_version=schema_version,
                 )
+                # DLQ Atomicity Boundary Note:
+                # The database transaction guarantees atomic ledger insertion + telemetry event persistence.
+                # Broker publication to telemetry.dlq is an external side-effect that lives on the messaging broker.
+                # It is issued here without committing any new DB row, ensuring zero ghost duplicate corruption in PostgreSQL.
                 await self.broker.publish(
                     topic="telemetry.dlq",
                     key=f"{tenant_id}:{vehicle_id}",
@@ -150,25 +174,30 @@ class ValidationWorker:
         )
 
         # ---------------------------------------------------------------------
-        # 4. Authoritative Database Persistence
+        # 4. Authoritative Database Persistence (Atomic with Ledger)
         # ---------------------------------------------------------------------
-        telemetry_row = TelemetryEvent(
-            tenant_id=tenant_id,
-            vehicle_id=vehicle_id,
-            event_id=event_id,
-            payload_hash=incoming_hash,
-            event_timestamp=event_time,
-            ingestion_timestamp=datetime.now(timezone.utc),
-            data_quality_status="VALID",
-            invalid_reasons=invalid_reasons or None,
-            is_late=is_late,
-            is_duplicate=False,
-            is_imputed=False,
-            schema_version=schema_version,
-            telemetry_data=raw_telemetry,
-        )
-        db.add(telemetry_row)
-        await db.commit()
+        try:
+            telemetry_row = TelemetryEvent(
+                tenant_id=tenant_id,
+                vehicle_id=vehicle_id,
+                event_id=event_id,
+                payload_hash=incoming_hash,
+                event_timestamp=event_time,
+                ingestion_timestamp=datetime.now(timezone.utc),
+                data_quality_status="VALID",
+                invalid_reasons=invalid_reasons or None,
+                is_late=is_late,
+                is_duplicate=False,
+                is_imputed=False,
+                schema_version=schema_version,
+                telemetry_data=raw_telemetry,
+            )
+            db.add(telemetry_row)
+            await db.commit()
+        except Exception as e:
+            await db.rollback()
+            logger.error(f"[ValidationWorker] Transaction failed while persisting telemetry event {event_id}: {e}")
+            raise
 
         # ---------------------------------------------------------------------
         # 5. Publish to telemetry.validated for hot state workers & downstream

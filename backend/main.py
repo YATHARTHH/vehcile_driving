@@ -12,11 +12,21 @@ from backend.streaming.broker import get_broker
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Ensure database directory and tables exist
+    # Startup: Ensure instance directory exists
     os.makedirs("instance", exist_ok=True)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    print("[Database] Async SQLAlchemy Database connected and tables created.")
+
+    # Startup Database Policy:
+    # In production and PostgreSQL environments, schema migrations are strictly managed
+    # by Alembic (e.g. via 'python scripts/migrate.py upgrade').
+    # create_all is permitted ONLY for local SQLite development/testing fallback when explicitly enabled.
+    is_sqlite = "sqlite" in settings.DATABASE_URL
+    is_dev_test = settings.ENVIRONMENT in ("development", "test")
+    if is_sqlite and (is_dev_test or settings.AUTO_CREATE_DEV_TABLES):
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("[Database] WARNING: Running Base.metadata.create_all() for local SQLite development only. In production, use 'python scripts/migrate.py upgrade'.")
+    else:
+        print("[Database] Schema managed by Alembic migrations. Skipping automatic create_all().")
 
     # Startup event broker
     broker = get_broker()
