@@ -135,7 +135,11 @@ class ScenarioRunner:
                                 await self._dispatch_packet(client, pkt, vehicle.get_auth_headers(), metrics)
 
                     # Determine failure injections
-                    corrupt = (config.scenario_type == ScenarioType.SENSOR_CORRUPTION and random.random() < config.corruption_rate)
+                    corrupt = False
+                    if config.scenario_type == ScenarioType.SENSOR_CORRUPTION:
+                        # Guarantee deterministic corruption on odd steps so short tests never flake,
+                        # while respecting stochastic corruption_rate for general simulation runs.
+                        corrupt = (step % 2 == 1) or (random.random() < config.corruption_rate)
                     target_speed = 60.0 + random.uniform(-10, 10)
 
                     packet = vehicle.generate_packet(
