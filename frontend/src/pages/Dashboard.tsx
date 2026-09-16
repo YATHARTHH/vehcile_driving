@@ -4,8 +4,10 @@ import { api } from '../services/api';
 import { Trip } from '../types';
 import { 
   Gauge, Navigation, Fuel, Activity, ArrowUpRight, Search, Download, FileText, 
-  CheckSquare, Square, X, BarChart2, Filter, CalendarCheck, MoreVertical
+  CheckSquare, Square, X, BarChart2, Filter, CalendarCheck, MoreVertical,
+  Radio, AlertTriangle, Compass
 } from 'lucide-react';
+import { useTelemetryStream } from '../hooks/useTelemetryStream';
 import { 
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line,
   BarChart, Bar, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis
@@ -21,6 +23,9 @@ export const Dashboard: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Real-time Telemetry WebSocket & Hot-State Streaming
+  const { liveState, connectionStatus, isLive } = useTelemetryStream();
   
   // Modals State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -195,10 +200,10 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Welcome Title */}
-      <div className="glass-card p-6 rounded-3xl border border-brand-500/20">
+      {/* Welcome Title & Live Connection Status */}
+      <div className="glass-card p-6 rounded-3xl border border-brand-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center glow-brand text-white">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center glow-brand text-white shrink-0">
             <Gauge className="w-7 h-7" />
           </div>
           <div>
@@ -208,7 +213,145 @@ export const Dashboard: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Live Stream Status Badge */}
+        <div className="flex items-center space-x-3 shrink-0">
+          <div className={`px-3.5 py-2 rounded-2xl border flex items-center space-x-2.5 text-xs font-semibold shadow-sm backdrop-blur-md ${
+            isLive
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              : connectionStatus === 'CONNECTING' || connectionStatus === 'AUTHENTICATING'
+              ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+              : connectionStatus === 'RECONNECTING'
+              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+              : 'bg-slate-800/80 text-slate-400 border-slate-700'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${
+              isLive ? 'bg-emerald-400 animate-ping' : 
+              connectionStatus === 'CONNECTING' || connectionStatus === 'AUTHENTICATING' || connectionStatus === 'RECONNECTING' ? 'bg-amber-400 animate-pulse' : 'bg-slate-500'
+            }`} />
+            <Radio className="w-3.5 h-3.5" />
+            <span>
+              {isLive ? `LIVE STREAM (v${liveState?.state_version || 1})` : `STREAM: ${connectionStatus}`}
+            </span>
+          </div>
+        </div>
       </div>
+
+      {/* Real-time Telemetry Live Monitor Panel */}
+      {liveState && (
+        <div className="glass-card p-6 rounded-3xl border border-brand-500/30 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-brand-950/20 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/5 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-dark-border">
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
+              <div>
+                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <span className="text-xs font-bold uppercase tracking-widest text-brand-400">In-Flight Telemetry Stream</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                    Vehicle: {liveState.vehicle_id}
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Seq: #{liveState.state_version}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Last updated {new Date(liveState.event_timestamp || liveState.updated_at).toLocaleTimeString()} · Realtime WebSocket Broadcast
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <span className="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center space-x-1.5 border bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                <Radio className="w-3.5 h-3.5 animate-pulse" />
+                <span>1 Hz Synchronized</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Live Metrics Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
+            <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Live Speed</span>
+              <div className="flex items-baseline space-x-1 mt-1">
+                <span className="text-3xl font-black text-white">{liveState.speed_kmph.toFixed(1)}</span>
+                <span className="text-xs text-slate-400 font-semibold">km/h</span>
+              </div>
+              <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                <div 
+                  className="bg-brand-500 h-full rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (liveState.speed_kmph / 160) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Engine RPM</span>
+              <div className="flex items-baseline space-x-1 mt-1">
+                <span className="text-3xl font-black text-white">{Math.round(liveState.rpm)}</span>
+                <span className="text-xs text-slate-400 font-semibold">RPM</span>
+              </div>
+              <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    liveState.rpm > 4500 ? 'bg-red-500' : liveState.rpm > 3500 ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`}
+                  style={{ width: `${Math.min(100, (liveState.rpm / 7000) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Instant Fuel Rate</span>
+              <div className="flex items-baseline space-x-1 mt-1">
+                <span className="text-3xl font-black text-white">{(liveState.fuel_rate_lph ?? 0).toFixed(2)}</span>
+                <span className="text-xs text-slate-400 font-semibold">L/h</span>
+              </div>
+              <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                <div 
+                  className="bg-purple-500 h-full rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, ((liveState.fuel_rate_lph ?? 0) / 25) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">GPS Coordinates</span>
+              <div className="text-sm font-bold font-mono text-white mt-1 truncate">
+                {liveState.lat != null ? liveState.lat.toFixed(4) : '0.0000'}, {liveState.lon != null ? liveState.lon.toFixed(4) : '0.0000'}
+              </div>
+              <div className="text-[11px] text-slate-400 mt-2 flex items-center space-x-1">
+                <Compass className="w-3.5 h-3.5 text-brand-400" />
+                <span>Heading: {liveState.heading != null ? `${liveState.heading}°` : 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Alerts Stream */}
+          {liveState.active_alerts && liveState.active_alerts.length > 0 && (
+            <div className="mt-4 p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-red-300 uppercase tracking-wider">Active Telemetry Alerts</span>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {liveState.active_alerts.map((alert, i) => (
+                    <span 
+                      key={i} 
+                      className={`px-2 py-0.5 rounded-md text-xs font-medium border ${
+                        alert.severity === 'CRITICAL' || alert.severity === 'HIGH'
+                          ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                          : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      }`}
+                    >
+                      [{alert.code}] {alert.message}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 4 Main Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

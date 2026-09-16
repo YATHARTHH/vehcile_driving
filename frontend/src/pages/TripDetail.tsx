@@ -5,8 +5,9 @@ import { TripDetail } from '../types';
 import { 
   ArrowLeft, AlertTriangle, Gauge, Zap, Activity, Fuel, 
   MapPin, Calendar, Award, Brain, Leaf, HeartPulse, CheckCircle2, Clock, 
-  RotateCw, Forward, CircleDot, Car, Navigation, FileText
+  RotateCw, Forward, CircleDot, Car, Navigation, FileText, Radio
 } from 'lucide-react';
+import { useTelemetryStream } from '../hooks/useTelemetryStream';
 import { 
   ResponsiveContainer, LineChart, Line, AreaChart, Area, BarChart, Bar,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -19,6 +20,9 @@ export const TripDetailView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [chartViewMode, setChartViewMode] = useState<'line' | 'bar'>('line');
+
+  // Real-time Telemetry WebSocket & Hot-State Streaming
+  const { liveState, isLive } = useTelemetryStream();
 
   useEffect(() => {
     const fetchTripDetail = async () => {
@@ -143,6 +147,27 @@ export const TripDetailView: React.FC = () => {
           <span>Date: {trip.trip_date || 'N/A'}</span>
         </div>
       </div>
+
+      {/* Real-time Streaming Sync Banner (If active vehicle matches) */}
+      {isLive && liveState && (
+        <div className="glass-card p-4 rounded-3xl border border-emerald-500/30 bg-emerald-950/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center space-x-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+            <div>
+              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                Live Telemetry Active for Vehicle {liveState.vehicle_id}
+              </span>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Current Speed: <strong className="text-white">{liveState.speed_kmph.toFixed(1)} km/h</strong> · RPM: <strong className="text-white">{Math.round(liveState.rpm)}</strong> · Instant Fuel: <strong className="text-white">{(liveState.fuel_rate_lph ?? 0).toFixed(2)} L/h</strong> · Sequence #{liveState.state_version}
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center space-x-1.5 shrink-0">
+            <Radio className="w-3.5 h-3.5 animate-pulse" />
+            <span>WebSocket Live</span>
+          </span>
+        </div>
+      )}
 
       {/* Top 3 Score / Analysis Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

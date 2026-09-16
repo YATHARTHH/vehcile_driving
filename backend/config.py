@@ -31,8 +31,11 @@ class Settings(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
     SCHEMA_REGISTRY_URL: str = os.getenv("SCHEMA_REGISTRY_URL", "http://localhost:8081")
 
-    # Hot State & Rate Limiting
+    # Hot State & Real-Time Projection Policies (Phase 8)
+    HOT_STATE_BACKEND: str = os.getenv("HOT_STATE_BACKEND", "auto")  # "auto", "redis", or "memory"
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    UI_STREAM_INTERVAL_SECONDS: float = float(os.getenv("UI_STREAM_INTERVAL_SECONDS", "1.0"))
+    WS_AUTH_TIMEOUT_SECONDS: float = float(os.getenv("WS_AUTH_TIMEOUT_SECONDS", "5.0"))
 
     # Object Storage & Medallion Data Lake
     MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "localhost:9000")

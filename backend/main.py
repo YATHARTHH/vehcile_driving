@@ -6,8 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
 from backend.database import Base, engine
-from backend.routers import auth, chatbot, insights, route, telemetry, trips
+from backend.routers import auth, chatbot, insights, route, telemetry, trips, ws_telemetry
 from backend.streaming.broker import get_broker
+from backend.streaming.hot_state import get_hot_state_manager
 
 
 @asynccontextmanager
@@ -33,12 +34,17 @@ async def lifespan(app: FastAPI):
     await broker.connect()
     print("[Broker] Event broker connected successfully.")
 
+    # Startup Hot State Manager (Phase 8 Real-Time Projection)
+    hot_state = await get_hot_state_manager()
+    print(f"[HotState] Hot state manager ({settings.HOT_STATE_BACKEND}) initialized.")
+
     yield
 
     # Shutdown
+    await hot_state.disconnect()
     await broker.disconnect()
     await engine.dispose()
-    print("[Lifecycle] Broker and Database connections cleanly disposed.")
+    print("[Lifecycle] HotState, Broker, and Database connections cleanly disposed.")
 
 
 app = FastAPI(
@@ -67,6 +73,7 @@ app.include_router(insights.router, prefix=settings.API_V1_STR)
 app.include_router(route.router, prefix=settings.API_V1_STR)
 app.include_router(chatbot.router, prefix=settings.API_V1_STR)
 app.include_router(telemetry.router)  # Already includes prefix in router definition
+app.include_router(ws_telemetry.router)  # Already includes prefix in router definition
 
 
 @app.get("/")

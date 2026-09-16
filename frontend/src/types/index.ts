@@ -70,3 +70,29 @@ export interface RouteOption {
   route_highlights: string[];
   coordinates: [number, number][];
 }
+
+export type AlertSeverity = 'INFO' | 'WARNING' | 'HIGH' | 'CRITICAL';
+
+export interface VehicleLiveState {
+  tenant_id: string;
+  vehicle_id: string;
+  state_version: number;
+  event_timestamp: string;
+  updated_at: string;
+  speed_kmph: number;
+  rpm: number;
+  fuel_level_pct?: number | null;
+  fuel_rate_lph?: number | null;
+  fuel_consumed_total_l?: number | null;
+  lat?: number | null;
+  lon?: number | null;
+  heading?: number | null;
+  driving_score?: number | null;
+  active_alerts: Array<{
+    code: string;
+    severity: AlertSeverity;
+    message: string;
+  }>;
+  highest_alert_severity?: AlertSeverity | null;
+}
+
