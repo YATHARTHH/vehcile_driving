@@ -180,8 +180,13 @@ export const useTelemetryStream = (targetVehicleId?: string): UseTelemetryStream
       if (pingTimerRef.current) window.clearInterval(pingTimerRef.current);
       if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
       if (wsRef.current) {
-        wsRef.current.close();
+        const socket = wsRef.current;
         wsRef.current = null;
+        if (socket.readyState === WebSocket.CONNECTING) {
+          socket.onopen = () => socket.close();
+        } else if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
       }
     };
   }, [isAuthenticated, token, vehicleId, refreshSnapshot]);

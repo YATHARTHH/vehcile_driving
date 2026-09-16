@@ -5,8 +5,9 @@ import { Trip } from '../types';
 import { 
   Gauge, Navigation, Fuel, Activity, ArrowUpRight, Search, Download, FileText, 
   CheckSquare, Square, X, BarChart2, Filter, CalendarCheck, MoreVertical,
-  Radio, AlertTriangle, Compass
+  Radio, AlertTriangle, Compass, Play, Square as StopSquare, Zap
 } from 'lucide-react';
+import { useAuth } from '../store/authContext';
 import { useTelemetryStream } from '../hooks/useTelemetryStream';
 import { 
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line,
@@ -20,12 +21,68 @@ const COLOR_PALETTE = [
 ];
 
 export const Dashboard: React.FC = () => {
+  const { user } = useAuth();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Real-time Telemetry WebSocket & Hot-State Streaming
   const { liveState, connectionStatus, isLive } = useTelemetryStream();
+
+  // In-browser live simulation controls
+  const [simInterval, setSimInterval] = useState<number | null>(null);
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (simInterval) window.clearInterval(simInterval);
+    };
+  }, [simInterval]);
+
+  const triggerSimulationPacket = async (hazard: boolean = false) => {
+    setIsSimulating(true);
+    try {
+      const targetSpeed = hazard ? 148.0 : Math.round(45 + Math.random() * 40);
+      const targetRpm = hazard ? 6200 : Math.round(2000 + Math.random() * 1800);
+      const targetFuelRate = hazard ? 9.5 : Number((3.6 + Math.random() * 2.2).toFixed(2));
+      const targetLat = 37.7749 + (Math.random() - 0.5) * 0.01;
+      const targetLon = -122.4194 + (Math.random() - 0.5) * 0.01;
+
+      await api.post('/telemetry/ingest', {
+        event_id: crypto.randomUUID(),
+        event_timestamp: new Date().toISOString(),
+        schema_version: 'v1.0.0',
+        telemetry: {
+          speed_kmph: targetSpeed,
+          rpm: targetRpm,
+          fuel_level_pct: 82.0,
+          fuel_rate_lph: targetFuelRate,
+          lat: targetLat,
+          lon: targetLon,
+          heading: Math.round(Math.random() * 360),
+          brake_pressure_bar: hazard ? 15.0 : 0.0,
+          engine_load_pct: hazard ? 94.0 : 48.0
+        }
+      });
+    } catch (err) {
+      console.error('Failed to trigger simulation packet', err);
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  const toggleContinuousSimulation = () => {
+    if (simInterval) {
+      window.clearInterval(simInterval);
+      setSimInterval(null);
+    } else {
+      triggerSimulationPacket(false);
+      const id = window.setInterval(() => {
+        triggerSimulationPacket(Math.random() < 0.12);
+      }, 1000);
+      setSimInterval(id);
+    }
+  };
   
   // Modals State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -237,121 +294,163 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Real-time Telemetry Live Monitor Panel */}
-      {liveState && (
-        <div className="glass-card p-6 rounded-3xl border border-brand-500/30 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-brand-950/20 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/5 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-dark-border">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
-              <div>
-                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                  <span className="text-xs font-bold uppercase tracking-widest text-brand-400">In-Flight Telemetry Stream</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                    Vehicle: {liveState.vehicle_id}
+      {/* Real-time Telemetry Live Monitor Panel (Always Visible) */}
+      <div className="glass-card p-6 rounded-3xl border border-brand-500/30 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-brand-950/20 relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/5 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-dark-border">
+          <div className="flex items-center space-x-3">
+            <div className={`w-3.5 h-3.5 rounded-full ${
+              liveState ? 'bg-emerald-400 animate-ping' : isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'
+            }`} />
+            <div>
+              <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                <span className="text-xs font-bold uppercase tracking-widest text-brand-400">In-Flight Telemetry Stream</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  Vehicle: {liveState?.vehicle_id || user?.vehicle_number || 'MH12AB9999'}
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Seq: #{liveState?.state_version || 0}
+                </span>
+                {simInterval && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/40 animate-pulse">
+                    ● Simulator Active (1 Hz)
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    Seq: #{liveState.state_version}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Last updated {new Date(liveState.event_timestamp || liveState.updated_at).toLocaleTimeString()} · Realtime WebSocket Broadcast
-                </p>
+                )}
               </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center space-x-1.5 border bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                <Radio className="w-3.5 h-3.5 animate-pulse" />
-                <span>1 Hz Synchronized</span>
-              </span>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {liveState 
+                  ? `Last updated ${new Date(liveState.event_timestamp || liveState.updated_at).toLocaleTimeString()} · Realtime WebSocket Broadcast`
+                  : 'Vehicle Standby / Engine Off · WebSocket Gateway Ready & Listening'}
+              </p>
             </div>
           </div>
 
-          {/* Live Metrics Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
-            <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Live Speed</span>
-              <div className="flex items-baseline space-x-1 mt-1">
-                <span className="text-3xl font-black text-white">{liveState.speed_kmph.toFixed(1)}</span>
-                <span className="text-xs text-slate-400 font-semibold">km/h</span>
-              </div>
-              <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-                <div 
-                  className="bg-brand-500 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(100, (liveState.speed_kmph / 160) * 100)}%` }}
-                />
-              </div>
-            </div>
+          {/* Interactive Simulation & Test Controls */}
+          <div className="flex items-center space-x-2 flex-wrap gap-y-2">
+            <button
+              onClick={toggleContinuousSimulation}
+              disabled={isSimulating && !simInterval}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 border transition-all ${
+                simInterval
+                  ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border-red-500/40'
+                  : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40 shadow-sm'
+              }`}
+            >
+              {simInterval ? <StopSquare className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              <span>{simInterval ? 'Stop Simulation' : 'Start Live Drive Stream'}</span>
+            </button>
 
-            <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Engine RPM</span>
-              <div className="flex items-baseline space-x-1 mt-1">
-                <span className="text-3xl font-black text-white">{Math.round(liveState.rpm)}</span>
-                <span className="text-xs text-slate-400 font-semibold">RPM</span>
-              </div>
-              <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    liveState.rpm > 4500 ? 'bg-red-500' : liveState.rpm > 3500 ? 'bg-amber-500' : 'bg-emerald-500'
-                  }`}
-                  style={{ width: `${Math.min(100, (liveState.rpm / 7000) * 100)}%` }}
-                />
-              </div>
-            </div>
+            <button
+              onClick={() => triggerSimulationPacket(true)}
+              disabled={isSimulating}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 border bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40 transition-all"
+              title="Dispatches an extreme speed & RPM hazard to test sub-second alert bypass"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span>Inject Hazard Alert</span>
+            </button>
 
-            <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Instant Fuel Rate</span>
-              <div className="flex items-baseline space-x-1 mt-1">
-                <span className="text-3xl font-black text-white">{(liveState.fuel_rate_lph ?? 0).toFixed(2)}</span>
-                <span className="text-xs text-slate-400 font-semibold">L/h</span>
-              </div>
-              <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-                <div 
-                  className="bg-purple-500 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(100, ((liveState.fuel_rate_lph ?? 0) / 25) * 100)}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">GPS Coordinates</span>
-              <div className="text-sm font-bold font-mono text-white mt-1 truncate">
-                {liveState.lat != null ? liveState.lat.toFixed(4) : '0.0000'}, {liveState.lon != null ? liveState.lon.toFixed(4) : '0.0000'}
-              </div>
-              <div className="text-[11px] text-slate-400 mt-2 flex items-center space-x-1">
-                <Compass className="w-3.5 h-3.5 text-brand-400" />
-                <span>Heading: {liveState.heading != null ? `${liveState.heading}°` : 'N/A'}</span>
-              </div>
-            </div>
+            <span className="px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center space-x-1.5 border bg-slate-800 text-slate-300 border-slate-700">
+              <Radio className={`w-3.5 h-3.5 ${isLive ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
+              <span>{connectionStatus}</span>
+            </span>
           </div>
-
-          {/* Live Alerts Stream */}
-          {liveState.active_alerts && liveState.active_alerts.length > 0 && (
-            <div className="mt-4 p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-start space-x-3">
-              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-red-300 uppercase tracking-wider">Active Telemetry Alerts</span>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {liveState.active_alerts.map((alert, i) => (
-                    <span 
-                      key={i} 
-                      className={`px-2 py-0.5 rounded-md text-xs font-medium border ${
-                        alert.severity === 'CRITICAL' || alert.severity === 'HIGH'
-                          ? 'bg-red-500/20 text-red-300 border-red-500/40'
-                          : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                      }`}
-                    >
-                      [{alert.code}] {alert.message}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      )}
+
+        {/* Live Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
+          <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Live Speed</span>
+            <div className="flex items-baseline space-x-1 mt-1">
+              <span className="text-3xl font-black text-white">
+                {liveState ? liveState.speed_kmph.toFixed(1) : '0.0'}
+              </span>
+              <span className="text-xs text-slate-400 font-semibold">km/h</span>
+            </div>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div 
+                className="bg-brand-500 h-full rounded-full transition-all duration-300"
+                style={{ width: `${Math.min(100, ((liveState?.speed_kmph || 0) / 160) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Engine RPM</span>
+            <div className="flex items-baseline space-x-1 mt-1">
+              <span className="text-3xl font-black text-white">
+                {liveState ? Math.round(liveState.rpm) : '0'}
+              </span>
+              <span className="text-xs text-slate-400 font-semibold">RPM</span>
+            </div>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-300 ${
+                  (liveState?.rpm || 0) > 4500 ? 'bg-red-500' : (liveState?.rpm || 0) > 3500 ? 'bg-amber-500' : 'bg-emerald-500'
+                }`}
+                style={{ width: `${Math.min(100, ((liveState?.rpm || 0) / 7000) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Instant Fuel Rate</span>
+            <div className="flex items-baseline space-x-1 mt-1">
+              <span className="text-3xl font-black text-white">
+                {liveState ? (liveState.fuel_rate_lph ?? 0).toFixed(2) : '0.00'}
+              </span>
+              <span className="text-xs text-slate-400 font-semibold">L/h</span>
+            </div>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div 
+                className="bg-purple-500 h-full rounded-full transition-all duration-300"
+                style={{ width: `${Math.min(100, (((liveState?.fuel_rate_lph ?? 0)) / 25) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="bg-slate-900/70 p-4 rounded-2xl border border-dark-border">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">GPS Coordinates</span>
+            <div className="text-sm font-bold font-mono text-white mt-1 truncate">
+              {liveState?.lat != null ? liveState.lat.toFixed(4) : '37.7749'}, {liveState?.lon != null ? liveState.lon.toFixed(4) : '-122.4194'}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-2 flex items-center space-x-1">
+              <Compass className="w-3.5 h-3.5 text-brand-400" />
+              <span>Heading: {liveState?.heading != null ? `${liveState.heading}°` : 'Standby'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Alerts Stream */}
+        {liveState?.active_alerts && liveState.active_alerts.length > 0 ? (
+          <div className="mt-4 p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-start space-x-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-red-300 uppercase tracking-wider">Active Telemetry Alerts (Throttle Bypassed)</span>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {liveState.active_alerts.map((alert, i) => (
+                  <span 
+                    key={i} 
+                    className={`px-2 py-0.5 rounded-md text-xs font-medium border ${
+                      alert.severity === 'CRITICAL' || alert.severity === 'HIGH'
+                        ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                        : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    }`}
+                  >
+                    [{alert.code}] {alert.message}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 px-4 py-2.5 rounded-2xl bg-slate-900/50 border border-dark-border flex items-center justify-between text-xs text-slate-400">
+            <span>● Vehicle Telemetry Nominal · No Active Mechanical or Safety Alerts</span>
+            <span className="text-[11px] font-mono text-slate-500">Sub-second Alert Triggering Active</span>
+          </div>
+        )}
+      </div>
 
       {/* 4 Main Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
