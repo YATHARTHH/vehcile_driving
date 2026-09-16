@@ -15,6 +15,7 @@ export interface UseTelemetryStreamResult {
   connectionStatus: StreamConnectionStatus;
   isLive: boolean;
   recentAlerts: Array<{ code: string; severity: AlertSeverity; message: string; timestamp?: string }>;
+  lastCompletedTrip: any | null;
   refreshSnapshot: () => Promise<void>;
 }
 
@@ -24,6 +25,7 @@ export const useTelemetryStream = (targetVehicleId?: string): UseTelemetryStream
 
   const [liveState, setLiveState] = useState<VehicleLiveState | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<StreamConnectionStatus>('CONNECTING');
+  const [lastCompletedTrip, setLastCompletedTrip] = useState<any | null>(null);
   const [recentAlerts, setRecentAlerts] = useState<
     Array<{ code: string; severity: AlertSeverity; message: string; timestamp?: string }>
   >([]);
@@ -138,6 +140,8 @@ export const useTelemetryStream = (targetVehicleId?: string): UseTelemetryStream
                   }
                 }
               }
+            } else if (msg.type === 'TRIP_COMPLETED') {
+              setLastCompletedTrip(msg.data);
             } else if (msg.type === 'error') {
               if (msg.code === 'AUTH_TIMEOUT' || msg.code === 'INVALID_TOKEN') {
                 setConnectionStatus('DISCONNECTED');
@@ -196,6 +200,7 @@ export const useTelemetryStream = (targetVehicleId?: string): UseTelemetryStream
     connectionStatus,
     isLive: connectionStatus === 'LIVE',
     recentAlerts,
+    lastCompletedTrip,
     refreshSnapshot,
   };
 };

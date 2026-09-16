@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 import logging
@@ -7,13 +8,18 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
 
 from backend.config import settings
+from backend.database import get_db
+from backend.models.session import TripSessionCheckpoint
 from backend.models.user import User
 from backend.schemas.telemetry import (
     IngestionResponse,
     RawIngressPayload,
 )
 from backend.streaming.broker import get_broker
+from backend.streaming.sessionizer import get_sessionizer
 from backend.utils.auth import get_current_user, get_optional_current_user
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 logger = logging.getLogger("fleettrack.routers.telemetry")
 router = APIRouter(prefix=f"{settings.API_V1_STR}/telemetry", tags=["telemetry"])
@@ -165,3 +171,132 @@ async def replay_quarantined_event(
         "retry_count": target["retry_count"],
         "replayed_by": current_user.username,
     }
+
+
+@router.post(
+    "/session/finish",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Request manual finalization of active driving session",
+)
+async def finish_active_session(
+    identity: tuple[str, str, str | None] = Depends(get_device_identity),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Asynchronous command endpoint requesting completion of an active driving session.
+    Enforces Phase 8 tenant and vehicle ACL.
+    Returns HTTP 202 Accepted and notifies UI via WebSocket upon Gold persistence.
+    """
+    tenant_id, vehicle_id, _ = identity
+    sessionizer = get_sessionizer()
+
+    mem_session = sessionizer.get_active_session(tenant_id, vehicle_id)
+    checkpoint = None
+    if mem_session is None:
+        # Verify if active or finish-requested session exists in durable DB
+        stmt = select(TripSessionCheckpoint).where(
+            TripSessionCheckpoint.tenant_id == tenant_id,
+            TripSessionCheckpoint.vehicle_id == vehicle_id,
+            TripSessionCheckpoint.status.in_(["ACTIVE", "FINISH_REQUESTED"]),
+        )
+        checkpoint = await db.scalar(stmt)
+
+    if mem_session is None and checkpoint is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No active driving session found for vehicle {vehicle_id}",
+        )
+
+    session_id = mem_session.session_id if mem_session else checkpoint.session_id
+
+    if checkpoint is not None:
+        checkpoint.status = "FINISH_REQUESTED"
+        checkpoint.updated_at = datetime.now(timezone.utc)
+        await db.commit()
+    elif mem_session is not None:
+        mem_session.status = "FINISH_REQUESTED"
+
+    # Trigger sessionizer finalization asynchronously
+    asyncio.create_task(sessionizer.request_finalization(tenant_id, vehicle_id, finalization_reason="MANUAL"))
+
+    return {
+        "status": "FINISH_REQUESTED",
+        "session_id": session_id,
+        "vehicle_id": vehicle_id,
+        "tenant_id": tenant_id,
+        "message": "Driving session finalization initiated successfully",
+    }
+
+
+@router.get(
+    "/session/active",
+    summary="Get clean projection of active driving session",
+)
+async def get_active_session_projection(
+    identity: tuple[str, str, str | None] = Depends(get_device_identity),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Returns clean projection of current in-flight driving session.
+    Enforces Phase 8 tenant and vehicle ACL.
+    """
+    tenant_id, vehicle_id, _ = identity
+    sessionizer = get_sessionizer()
+
+    # 1. Check in-memory hot active session first (sub-second accuracy)
+    mem_session = sessionizer.get_active_session(tenant_id, vehicle_id)
+    if mem_session is not None and mem_session.status in ("ACTIVE", "FINISH_REQUESTED"):
+        now = datetime.now(timezone.utc)
+        start_t = mem_session.start_event_time
+        if start_t.tzinfo is None:
+            start_t = start_t.replace(tzinfo=timezone.utc)
+        elapsed_sec = max(0.0, (now - start_t).total_seconds())
+        return {
+            "active": True,
+            "session_id": mem_session.session_id,
+            "tenant_id": mem_session.tenant_id,
+            "vehicle_id": mem_session.vehicle_id,
+            "status": mem_session.status,
+            "start_time": mem_session.start_event_time.isoformat(),
+            "last_event_time": mem_session.last_event_time.isoformat(),
+            "duration_seconds": round(elapsed_sec, 1),
+            "distance_km": round(mem_session.distance_km, 2),
+            "point_count": mem_session.point_count,
+            "last_speed": mem_session.last_speed,
+        }
+
+    # 2. Fallback to durable checkpoint in database
+    stmt = select(TripSessionCheckpoint).where(
+        TripSessionCheckpoint.tenant_id == tenant_id,
+        TripSessionCheckpoint.vehicle_id == vehicle_id,
+        TripSessionCheckpoint.status.in_(["ACTIVE", "FINISH_REQUESTED", "FINALIZING"]),
+    )
+    checkpoint = await db.scalar(stmt)
+
+    if not checkpoint:
+        return {
+            "active": False,
+            "vehicle_id": vehicle_id,
+            "tenant_id": tenant_id,
+        }
+
+    now = datetime.now(timezone.utc)
+    start_t = checkpoint.start_event_time
+    if start_t.tzinfo is None:
+        start_t = start_t.replace(tzinfo=timezone.utc)
+    elapsed_sec = max(0.0, (now - start_t).total_seconds())
+
+    return {
+        "active": True,
+        "session_id": checkpoint.session_id,
+        "tenant_id": checkpoint.tenant_id,
+        "vehicle_id": checkpoint.vehicle_id,
+        "status": checkpoint.status,
+        "start_time": checkpoint.start_event_time.isoformat(),
+        "last_event_time": checkpoint.last_event_time.isoformat(),
+        "duration_seconds": round(elapsed_sec, 1),
+        "distance_km": round(checkpoint.distance_km, 2),
+        "point_count": checkpoint.point_count,
+        "last_speed": checkpoint.last_speed,
+    }
+

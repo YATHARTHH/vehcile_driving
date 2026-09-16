@@ -50,6 +50,18 @@ class Settings(BaseSettings):
     WATERMARK_STATE_TTL_HOURS: float = float(os.getenv("WATERMARK_STATE_TTL_HOURS", "24.0"))
     MAX_REPLAY_ATTEMPTS: int = int(os.getenv("MAX_REPLAY_ATTEMPTS", "3"))
 
+    # Phase 9: Trip Sessionization & Gold Layer Policies
+    SESSION_INACTIVITY_TIMEOUT_SECONDS: float = float(os.getenv("SESSION_INACTIVITY_TIMEOUT_SECONDS", "300.0"))
+    SESSION_CHECKPOINT_INTERVAL_SECONDS: float = float(os.getenv("SESSION_CHECKPOINT_INTERVAL_SECONDS", "10.0"))
+    SESSION_CHECKPOINT_INTERVAL_PACKETS: int = int(os.getenv("SESSION_CHECKPOINT_INTERVAL_PACKETS", "10"))
+    FINALIZATION_LEASE_TIMEOUT_SECONDS: float = float(os.getenv("FINALIZATION_LEASE_TIMEOUT_SECONDS", "60.0"))
+    MAX_INTEGRATION_GAP_SECONDS: float = float(os.getenv("MAX_INTEGRATION_GAP_SECONDS", "60.0"))
+    MAX_PLAUSIBLE_GPS_SPEED_KMPH: float = float(os.getenv("MAX_PLAUSIBLE_GPS_SPEED_KMPH", "180.0"))
+    MOVING_SPEED_THRESHOLD_KMPH: float = float(os.getenv("MOVING_SPEED_THRESHOLD_KMPH", "1.0"))
+    MIN_AUTO_TRIP_POINTS: int = int(os.getenv("MIN_AUTO_TRIP_POINTS", "3"))
+    MIN_AUTO_TRIP_DISTANCE_KM: float = float(os.getenv("MIN_AUTO_TRIP_DISTANCE_KM", "0.05"))
+    MIN_MANUAL_TRIP_POINTS: int = int(os.getenv("MIN_MANUAL_TRIP_POINTS", "2"))
+
     # CORS Origins
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",

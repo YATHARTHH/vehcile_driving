@@ -44,6 +44,7 @@ async def lifespan(app: FastAPI):
     if settings.ENABLE_STREAMING_WORKERS and settings.ENVIRONMENT != "test":
         from backend.streaming.bronze_sink import BronzeSinkWorker
         from backend.streaming.projection_worker import RealtimeProjectionWorker
+        from backend.streaming.sessionizer import get_sessionizer
         from backend.streaming.validation_worker import ValidationWorker
 
         bronze_worker = BronzeSinkWorker(broker)
@@ -53,19 +54,26 @@ async def lifespan(app: FastAPI):
             hot_state=hot_state,
             ui_interval_seconds=settings.UI_STREAM_INTERVAL_SECONDS,
         )
+        sessionizer_worker = get_sessionizer(broker)
 
         worker_tasks = [
             asyncio.create_task(bronze_worker.run()),
             asyncio.create_task(validation_worker.run()),
             asyncio.create_task(projection_worker.run()),
+            asyncio.create_task(sessionizer_worker.run()),
         ]
-        print("[Pipeline] Streaming pipeline workers (Bronze, Validation, Realtime Projection) active.")
+        print("[Pipeline] Streaming pipeline workers (Bronze, Validation, Realtime Projection, Trip Sessionizer) active.")
 
     yield
 
     # Shutdown
     for task in worker_tasks:
         task.cancel()
+    if settings.ENABLE_STREAMING_WORKERS and settings.ENVIRONMENT != "test":
+        try:
+            await sessionizer_worker.stop()
+        except Exception:
+            pass
     await hot_state.disconnect()
     await broker.disconnect()
     await engine.dispose()

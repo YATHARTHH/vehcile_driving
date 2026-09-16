@@ -12,6 +12,7 @@ from backend.config import settings
 from backend.database import AsyncSessionLocal, get_db
 from backend.models.tenant import Vehicle
 from backend.models.user import User
+from backend.streaming.broker import get_broker
 from backend.streaming.hot_state import VehicleLiveState, get_hot_state_manager
 from backend.utils.auth import get_current_user
 
@@ -202,6 +203,24 @@ async def websocket_telemetry_endpoint(
         except Exception as e:
             logger.error(f"[WS Gateway] Error streaming channel {channel}: {e}")
 
+    async def trip_completed_listener():
+        try:
+            broker = get_broker()
+            async for key, value, _ in broker.subscribe("telemetry.gold.trip_completed"):
+                v_id = value.get("vehicle_id")
+                t_id = value.get("tenant_id")
+                if t_id == tenant_id and (v_id in authorized_vehicles or not authorized_vehicles):
+                    await websocket.send_json({
+                        "type": "TRIP_COMPLETED",
+                        "data": value,
+                    })
+        except asyncio.CancelledError:
+            pass
+        except Exception as ex:
+            logger.error(f"[WS Gateway] Error listening for trip completion: {ex}")
+
+    trip_event_task = asyncio.create_task(trip_completed_listener())
+
     try:
         while True:
             raw_text = await websocket.receive_text()
@@ -271,5 +290,6 @@ async def websocket_telemetry_endpoint(
     except Exception as e:
         logger.error(f"[WS Gateway] WebSocket unexpected error for user {username}: {e}")
     finally:
+        trip_event_task.cancel()
         for t in subscription_tasks.values():
             t.cancel()

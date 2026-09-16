@@ -41,6 +41,7 @@ class AsyncQueueBroker:
 
     def __init__(self) -> None:
         self._topics: dict[str, list[asyncio.Queue]] = defaultdict(list)
+        self._offsets: dict[str, int] = defaultdict(int)
         self._connected: bool = False
         self._lock = asyncio.Lock()
 
@@ -56,17 +57,19 @@ class AsyncQueueBroker:
         if not self._connected:
             await self.connect()
 
+        async with self._lock:
+            self._offsets[topic] += 1
+            current_offset = self._offsets[topic]
+            queues = list(self._topics[topic])
+
         metadata = {
             "key": key,
             "topic": topic,
             "headers": headers or {},
             "partition": 0,
-            "offset": 0,
+            "offset": current_offset,
         }
         item = (key, value, metadata)
-
-        async with self._lock:
-            queues = list(self._topics[topic])
 
         for q in queues:
             await q.put(item)

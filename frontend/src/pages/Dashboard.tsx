@@ -5,7 +5,7 @@ import { Trip } from '../types';
 import { 
   Gauge, Navigation, Fuel, Activity, ArrowUpRight, Search, Download, FileText, 
   CheckSquare, Square, X, BarChart2, Filter, CalendarCheck, MoreVertical,
-  Radio, AlertTriangle, Compass, Play, Square as StopSquare, Zap
+  Radio, AlertTriangle, Compass, Play, Square as StopSquare, Zap, CheckCircle2, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../store/authContext';
 import { useTelemetryStream } from '../hooks/useTelemetryStream';
@@ -27,17 +27,47 @@ export const Dashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Real-time Telemetry WebSocket & Hot-State Streaming
-  const { liveState, connectionStatus, isLive } = useTelemetryStream();
+  const { liveState, connectionStatus, isLive, lastCompletedTrip } = useTelemetryStream();
 
   // In-browser live simulation controls
   const [simInterval, setSimInterval] = useState<number | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isFinishingSession, setIsFinishingSession] = useState(false);
+  const [completionToast, setCompletionToast] = useState<{ message: string; tripId?: number } | null>(null);
+
+  useEffect(() => {
+    if (lastCompletedTrip) {
+      setCompletionToast({
+        message: `🎉 Trip Completed & Saved! Distance: ${lastCompletedTrip.distance_km} km · Score: ${lastCompletedTrip.logic_score}/100 (${lastCompletedTrip.ml_behavior})`,
+        tripId: lastCompletedTrip.trip_id,
+      });
+      // Resync recent trips from REST API
+      api.get('/trips').then(res => setTrips(res.data)).catch(console.error);
+    }
+  }, [lastCompletedTrip]);
 
   useEffect(() => {
     return () => {
       if (simInterval) window.clearInterval(simInterval);
     };
   }, [simInterval]);
+
+  const handleFinishDrive = async () => {
+    setIsFinishingSession(true);
+    if (simInterval) {
+      window.clearInterval(simInterval);
+      setSimInterval(null);
+    }
+    try {
+      await api.post('/telemetry/session/finish');
+      setCompletionToast({ message: "Drive finalization requested... Calculating Gold metrics & AI score." });
+    } catch (err: any) {
+      console.error('Failed to finish session', err);
+      alert(err.response?.data?.detail || 'No active driving session found to finish.');
+    } finally {
+      setIsFinishingSession(false);
+    }
+  };
 
   const triggerSimulationPacket = async (hazard: boolean = false) => {
     setIsSimulating(true);
@@ -351,12 +381,45 @@ export const Dashboard: React.FC = () => {
               <span>Inject Hazard Alert</span>
             </button>
 
+            <button
+              onClick={handleFinishDrive}
+              disabled={isFinishingSession}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 border bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-200 border-emerald-500/40 transition-all disabled:opacity-50"
+              title="Finalizes the active driving session and saves completed trip to the database"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{isFinishingSession ? 'Finalizing...' : 'Finish Drive & Save Trip'}</span>
+            </button>
+
             <span className="px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center space-x-1.5 border bg-slate-800 text-slate-300 border-slate-700">
               <Radio className={`w-3.5 h-3.5 ${isLive ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
               <span>{connectionStatus}</span>
             </span>
           </div>
         </div>
+
+        {/* Real-time Trip Completion Notification Banner */}
+        {completionToast && (
+          <div className="mt-4 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-teal-500/10 border border-emerald-500/40 flex items-center justify-between text-xs text-emerald-300 animate-in fade-in">
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>{completionToast.message}</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              {completionToast.tripId && (
+                <Link
+                  to={`/trip/${completionToast.tripId}`}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-500/30 hover:bg-emerald-500/40 text-emerald-200 font-bold underline"
+                >
+                  View Trip Analysis →
+                </Link>
+              )}
+              <button onClick={() => setCompletionToast(null)} className="text-slate-400 hover:text-white">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Live Metrics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
