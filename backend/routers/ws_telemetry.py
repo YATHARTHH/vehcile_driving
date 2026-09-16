@@ -42,7 +42,7 @@ async def resolve_user_tenant_and_vehicles(user: User, db: AsyncSession) -> tupl
         return tenant_id, authorized_vehicles
 
     # 2. Fallback for standalone / demo users: bound to their own vehicle
-    fallback_tenant = "tenant_default"
+    fallback_tenant = f"tenant_{user.id}" if hasattr(user, "id") and user.id else "tenant_default"
     return fallback_tenant, {user.vehicle_number}
 
 
@@ -126,16 +126,25 @@ async def websocket_telemetry_endpoint(
                 jwt_token = init_msg.get("token")
         except asyncio.TimeoutError:
             logger.warning("[WS Gateway] Authentication timed out. Closing socket.")
-            await websocket.send_json({
-                "type": "error",
-                "code": "AUTH_TIMEOUT",
-                "message": f"Authentication token required within {settings.WS_AUTH_TIMEOUT_SECONDS}s.",
-            })
-            await websocket.close(code=4001)
+            try:
+                await websocket.send_json({
+                    "type": "error",
+                    "code": "AUTH_TIMEOUT",
+                    "message": f"Authentication token required within {settings.WS_AUTH_TIMEOUT_SECONDS}s.",
+                })
+                await websocket.close(code=4001)
+            except Exception:
+                pass
+            return
+        except WebSocketDisconnect:
+            logger.info("[WS Gateway] Client disconnected before completing handshake.")
             return
         except Exception as e:
             logger.warning(f"[WS Gateway] Invalid handshake message: {e}")
-            await websocket.close(code=4001)
+            try:
+                await websocket.close(code=4001)
+            except Exception:
+                pass
             return
 
     if not jwt_token:
@@ -202,7 +211,7 @@ async def websocket_telemetry_endpoint(
                 await websocket.send_json({"type": "error", "message": "Invalid JSON format"})
                 continue
 
-            action = msg.get("action")
+            action = msg.get("action") or msg.get("type")
 
             if action == "subscribe":
                 req_vehicle_id = msg.get("vehicle_id")

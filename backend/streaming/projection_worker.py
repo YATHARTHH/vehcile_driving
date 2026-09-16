@@ -43,10 +43,12 @@ class RealtimeProjectionWorker:
         alerts: list[dict[str, Any]] = []
         highest: AlertSeverity | None = None
 
-        speed = float(telemetry.get("speed_kmph", 0.0) or 0.0)
-        rpm = float(telemetry.get("rpm", 0.0) or 0.0)
-        brake = float(telemetry.get("brake_pressure_bar", 0.0) or 0.0)
-        engine_load = float(telemetry.get("engine_load_pct", 0.0) or 0.0)
+        raw_speed = telemetry.get("speed_kmph") if telemetry.get("speed_kmph") is not None else telemetry.get("speed", 0.0)
+        raw_rpm = telemetry.get("rpm") if telemetry.get("rpm") is not None else telemetry.get("engine_rpm", 0.0)
+        speed = float(raw_speed or 0.0)
+        rpm = float(raw_rpm or 0.0)
+        brake = float(telemetry.get("brake_pressure_bar") if telemetry.get("brake_pressure_bar") is not None else telemetry.get("brake_pressure", 0.0) or 0.0)
+        engine_load = float(telemetry.get("engine_load_pct") if telemetry.get("engine_load_pct") is not None else telemetry.get("engine_load", 0.0) or 0.0)
 
         # Critical threshold: extreme harsh braking event
         if brake > 100.0:
@@ -120,20 +122,26 @@ class RealtimeProjectionWorker:
         if fuel_consumed_total_l is None and "fuel_consumed_l" in telemetry:
             fuel_consumed_total_l = telemetry.get("fuel_consumed_l")
 
+        raw_speed = telemetry.get("speed_kmph") if telemetry.get("speed_kmph") is not None else telemetry.get("speed", 0.0)
+        raw_rpm = telemetry.get("rpm") if telemetry.get("rpm") is not None else telemetry.get("engine_rpm", 0.0)
+        raw_lat = telemetry.get("lat") if telemetry.get("lat") is not None else telemetry.get("latitude")
+        raw_lon = telemetry.get("lon") if telemetry.get("lon") is not None else telemetry.get("longitude")
+        raw_heading = telemetry.get("heading") if telemetry.get("heading") is not None else telemetry.get("bearing")
+
         return VehicleLiveState(
             tenant_id=tenant_id,
             vehicle_id=vehicle_id,
             state_version=current_version,
             event_timestamp=event_time,
             updated_at=datetime.now(timezone.utc),
-            speed_kmph=float(telemetry.get("speed_kmph", 0.0) or 0.0),
-            rpm=float(telemetry.get("rpm", 0.0) or 0.0),
+            speed_kmph=float(raw_speed or 0.0),
+            rpm=float(raw_rpm or 0.0),
             fuel_level_pct=float(fuel_level_pct) if fuel_level_pct is not None else None,
             fuel_rate_lph=float(fuel_rate_lph) if fuel_rate_lph is not None else None,
             fuel_consumed_total_l=float(fuel_consumed_total_l) if fuel_consumed_total_l is not None else None,
-            lat=float(telemetry.get("lat")) if telemetry.get("lat") is not None else None,
-            lon=float(telemetry.get("lon")) if telemetry.get("lon") is not None else None,
-            heading=float(telemetry.get("heading")) if telemetry.get("heading") is not None else None,
+            lat=float(raw_lat) if raw_lat is not None else None,
+            lon=float(raw_lon) if raw_lon is not None else None,
+            heading=float(raw_heading) if raw_heading is not None else None,
             driving_score=float(envelope.get("driving_score")) if envelope.get("driving_score") is not None else None,
             active_alerts=alerts,
             highest_alert_severity=highest_sev,

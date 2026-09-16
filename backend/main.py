@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -38,9 +39,33 @@ async def lifespan(app: FastAPI):
     hot_state = await get_hot_state_manager()
     print(f"[HotState] Hot state manager ({settings.HOT_STATE_BACKEND}) initialized.")
 
+    # Startup Streaming Pipeline Workers (Bronze Lake, Validation, and Real-Time Projection)
+    worker_tasks = []
+    if settings.ENABLE_STREAMING_WORKERS and settings.ENVIRONMENT != "test":
+        from backend.streaming.bronze_sink import BronzeSinkWorker
+        from backend.streaming.projection_worker import RealtimeProjectionWorker
+        from backend.streaming.validation_worker import ValidationWorker
+
+        bronze_worker = BronzeSinkWorker(broker)
+        validation_worker = ValidationWorker(broker)
+        projection_worker = RealtimeProjectionWorker(
+            broker=broker,
+            hot_state=hot_state,
+            ui_interval_seconds=settings.UI_STREAM_INTERVAL_SECONDS,
+        )
+
+        worker_tasks = [
+            asyncio.create_task(bronze_worker.run()),
+            asyncio.create_task(validation_worker.run()),
+            asyncio.create_task(projection_worker.run()),
+        ]
+        print("[Pipeline] Streaming pipeline workers (Bronze, Validation, Realtime Projection) active.")
+
     yield
 
     # Shutdown
+    for task in worker_tasks:
+        task.cancel()
     await hot_state.disconnect()
     await broker.disconnect()
     await engine.dispose()

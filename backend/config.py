@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     UI_STREAM_INTERVAL_SECONDS: float = float(os.getenv("UI_STREAM_INTERVAL_SECONDS", "1.0"))
     WS_AUTH_TIMEOUT_SECONDS: float = float(os.getenv("WS_AUTH_TIMEOUT_SECONDS", "5.0"))
+    ENABLE_STREAMING_WORKERS: bool = os.getenv("ENABLE_STREAMING_WORKERS", "true").lower() in ("true", "1")
 
     # Object Storage & Medallion Data Lake
     MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "localhost:9000")
